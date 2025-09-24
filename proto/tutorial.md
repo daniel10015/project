@@ -1,6 +1,6 @@
 # Tutorial
 
-Run `proto.py` and your output should look something like this:
+Run `sample_matmul.py` and your output should look something like this:
 ```
 PyTorch version: 2.8.0+cu126
 CUPTI module loaded: cupti.cupti
@@ -15,3 +15,15 @@ Result tensor shape: torch.Size([1024, 1024])
 ```
 
 Errors related to driver versioning most likely means you'll need to downgrade CUPTI, or upgrade torch. In most cases it's preferable to downgrade to match the driver version, which you check by doing `nvcc --version`.
+
+You can also run `sample_model.py` which should output something similar to:
+```
+Memcpy Host -> Device of 1728 bytes on stream 7 duration (ns) = 1440
+Memcpy Host -> Device of 64 bytes on stream 7 duration (ns) = 352
+Memcpy Host -> Device of 18432 bytes on stream 7 duration (ns) = 1792
+Memcpy Host -> Device of 128 bytes on stream 7 duration (ns) = 352
+Memcpy Host -> Device of 1280 bytes on stream 7 duration (ns) = 864
+Memcpy Host -> Device of 40 bytes on stream 7 duration (ns) = 352
+----------Training complete----------
+loss: 2.2960925102233887
+```
