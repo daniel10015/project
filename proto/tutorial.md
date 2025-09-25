@@ -14,8 +14,6 @@ Computation done, profiling captured.
 Result tensor shape: torch.Size([1024, 1024])
 ```
 
-Errors related to driver versioning most likely means you'll need to downgrade CUPTI, or upgrade torch. In most cases it's preferable to downgrade to match the driver version, which you check by doing `nvcc --version`.
-
 You can also run `sample_model.py` which should output something similar to:
 ```
 Memcpy Host -> Device of 1728 bytes on stream 7 duration (ns) = 1440

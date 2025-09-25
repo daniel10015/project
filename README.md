@@ -9,6 +9,8 @@ Check the driver version of your GPU and ensure your CUPTI and pytorch versions 
 
 NOTE: You may need to do some tricky things with versioning to get them all to line up with the driver version.
 
+Errors related to driver versioning most likely means you'll need to downgrade CUPTI, or upgrade torch. In most cases it's preferable to downgrade to match the driver version, which you check by doing `nvcc --version`.
+
 Run the sample to see if you've installed CUPTI and torch correctly by following [the tutorial](proto/tutorial.md)
 
 ## CUPTI tips
