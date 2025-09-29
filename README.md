@@ -7,7 +7,10 @@ WSL2 setup process:
 
 Ensure you have a python version >= python3.9 by doing `python --version`
 
-Create a virtual environment by doing `python -m venv [name_of_your_virtual_environment]`
+Create a virtual environment by doing 
+```
+python -m venv [name_of_your_virtual_environment]
+```
 
 Here are the steps in downloading the cuda toolkit 13.0. Follow the instruction to delete the old GPG key on this document and then download the cuda toolkit 13.0: 
 https://docs.nvidia.com/cuda/wsl-user-guide/index.html#cuda-support-for-wsl-2 
@@ -15,11 +18,18 @@ https://docs.nvidia.com/cuda/wsl-user-guide/index.html#cuda-support-for-wsl-2
 Ensure that nvidia-smi in the WSL2 terminal has the same/similar output in the Command Prompt by running the command `nvidia-smi` in both terminals. If nvidia-smi outputs an error similar to the one in NOTE 2, then follow those instructions to fix the issue. Then come back and redo the toolkit installation.
 
 The known version that can run the project is pytorch 12.8, thus, we will install pytorch 12.8 and cupti-python 12.8.
-Enable your virtual environment and execute this command: `pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu128 cupti-python==12.8`
+Enable your virtual environment and execute this command: 
+```
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu128 cupti-python==12.8
+```
 
-Run the python script if you installed everything correctly in `proto/verify_torch_version.py`
+Run the python script if you installed everything correctly in 
+```
+proto/verify_torch_version.py
+```
 
 NOTE 1: You may need to do some tricky things with versioning to get them all to line up with the driver version.
+
 NOTE 2: If `nvidia-smi` outputs `NVIDIA-SMI has failed because it couldn't communicate with the NVIDIA driver. Make sure that the latest NVIDIA driver is installed and running.` then run these commands to delete all old instances of cuda toolkit in WSL2. One of our developers had this issue and this solved it.
 
 1. `sudo apt-get remove --purge '^nvidia-.*'`
