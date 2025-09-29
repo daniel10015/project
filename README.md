@@ -17,6 +17,8 @@ Ensure that nvidia-smi in the WSL2 terminal has the same/similar output in the C
 The known version that can run the project is pytorch 12.8, thus, we will install pytorch 12.8 and cupti-python 12.8.
 Enable your virtual environment and execute this command: `pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu128 cupti-python==12.8`
 
+Run the python script if you installed everything correctly in `proto/verify_torch_version.py`
+
 NOTE 1: You may need to do some tricky things with versioning to get them all to line up with the driver version.
 NOTE 2: If `nvidia-smi` outputs `NVIDIA-SMI has failed because it couldn't communicate with the NVIDIA driver. Make sure that the latest NVIDIA driver is installed and running.` then run these commands to delete all old instances of cuda toolkit in WSL2. One of our developers had this issue and this solved it.
 
