@@ -1,7 +1,7 @@
 # project
 Don't really have a concise name for this yet.
 ## Steps to download cupti-python
-Cupti-python is only available on Linux, and therefore you must be on a linux distribution to run the project. If you're on Windows, then you must run the project on WSL2. You can confirm this by executing `wsl -l -v` in the command prompt. If you have WSL1, execute the command to upgrade to WSL2.
+Cupti-python is only available on Linux, and therefore you must be on a linux distribution to run the project. If you're on Windows, then you must run the project on WSL2. You can confirm this by executing `wsl -l -v` in the command prompt. If you have WSL1, execute `wsl --set-version <Distro> 2` to upgrade to WSL2. Replace <Distro> with the distribution you installed WSL with.
 
 WSL2 setup process:
 
