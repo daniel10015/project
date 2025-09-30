@@ -1,4 +1,20 @@
+
 from time import perf_counter, perf_counter_ns, sleep
+
+"""
+A wrapper class for train/test loops defined as functions.
+"""
+class LoopFnWrap():
+    def __init__(self, fn, metrics): 
+        assert callable(fn), f"{fn.__name__} is not callable"
+        self.fn = fn
+        self.metrics = metrics  # TODO: Add metrics/activity kind
+
+    def __call__(self):
+        # TODO
+        # start profiling
+        self.fn()
+        # end profiling and print/return results
 
 def benchmark_s(func, *args) -> float:
   """
