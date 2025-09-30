@@ -1,24 +1,24 @@
 from time import perf_counter, sleep
 
-# TODO figure out how to arbitrarily pass in params
-def benchmark(func, weak = False) -> float:
+def benchmark(func, *args) -> float:
   """
   Assumes function is blocking, so when the function returns the execution is finished
   """
   start_time = perf_counter()
-  func()
+  func(*args)
   return perf_counter() - start_time
 
+# Sample functions to test capabilities
 def sleep2second():
   sleep(2)
 
-def long_loop(n=1024):
+def long_loop(start=0, n=1024):
   k = 0
-  for i in range(1024):
-    for ii in range(1024):
+  for i in range(start,n):
+    for ii in range(start,n):
       k += i + ii
   return k  
 
 if __name__ == '__main__':
   print(f'sleep takes {benchmark(sleep2second)} seconds')
-  print(f'long_loop takes {benchmark(long_loop)} seconds')
+  print(f'long_loop takes {benchmark(long_loop, 1<<2, 1<<10)} seconds')
