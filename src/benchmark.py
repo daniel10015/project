@@ -1,17 +1,42 @@
 
 from time import perf_counter, perf_counter_ns, sleep
-
+from enum import Enum, unique
+from cupti import cupti
 """
 A wrapper class for train/test loops defined as functions.
 """
+@unique
+class Metric(Enum):
+    CPU_TIME_TOTAL = auto()
+    CPU_MEM_COPY = auto()
+    GPU_MEM_COPY = auto()
+    
+
 class LoopFnWrap():
-    def __init__(self, fn, metrics): 
+    METRIC_CUPTI_ENUM_MAP = {
+            "GPU_MEM_COPY":cupti.ActivityKind.MEMCPY
+    }
+    def cupti_func_buffer_requested(self):
+        buffer_size = 8 * 1024 * 1024  # 8MB buffer
+        max_num_records = 0            # no bound on # of activity records
+        return buffer_size, max_num_records
+
+    def cupti_func_buffer_completed(self, activities: list):
+        self.cupti_activities = activities
+
+    def __init__(self, fn, 
+                 metrics=("GPU_MEM_COPY")):
         assert callable(fn), f"{fn.__name__} is not callable"
         self.fn = fn
         self.metrics = metrics  # TODO: Add metrics/activity kind
+        self.cupti_activities = None  # activity objects returned from cupti callback
+        # TODO: Context?
+
+        # enable cupti activities based on metrics
+        
 
     def __call__(self):
-        # TODO
+        
         # start profiling
         self.fn()
         # end profiling and print/return results
