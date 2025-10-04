@@ -1,6 +1,6 @@
 
 from time import perf_counter, perf_counter_ns, sleep
-from enum import Enum, unique
+from enum import Enum, unique, auto
 from cupti import cupti
 """
 A wrapper class for train/test loops defined as functions.
