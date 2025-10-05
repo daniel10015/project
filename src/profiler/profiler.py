@@ -50,5 +50,8 @@ class profiler():
         for metric in self.metrics:
             cupti.activity_disable(metric_info.METRIC_TO_CUPTI[metric])
 
+    def visualize(self, metric_type: str):
+        self.metric_callback.render_type(metric_type)
+
     def spill(self):
         return self.profile_out

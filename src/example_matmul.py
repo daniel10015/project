@@ -4,7 +4,7 @@ a = torch.randn(1024, 1024, device="cuda")
 
 from profiler import profiler
 
-profiler = profiler.profiler(fn = lambda x: x.to("cuda").to("cpu") , metrics=('MEMCPY',) )
+profiler = profiler.profiler(fn = lambda x: x.to("cuda").to("cpu") , metrics=('MEMCPY','MEMORY') )
 profiler(a)
 
 profile_info = profiler.spill()

@@ -19,9 +19,11 @@ MEMCPY_KIND_STR = {
 # TODO: replace strings with enum so they're caught by linters better?
 # or maybe just always use cupti.activitykind?
 METRIC_TO_CUPTI = {
-  'MEMCPY':cupti.ActivityKind.MEMCPY
+  'MEMCPY':cupti.ActivityKind.MEMCPY,
+  'MEMORY':cupti.ActivityKind.MEMORY2,
 }
 
 CUPTI_TO_METRIC = {
-  cupti.ActivityKind.MEMCPY:'MEMCPY'
+  cupti.ActivityKind.MEMCPY:'MEMCPY',
+  cupti.ActivityKind.MEMORY2:'MEMORY',
 }
