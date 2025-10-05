@@ -29,12 +29,31 @@ def do_something():
   print(x_cpu.device, output_gpu.device, output_cpu.device)
   torch.cuda.empty_cache()
 
-profile = profiler(do_something, ('MEMORY',))
-profile()
+def do_profile():
+  profile = profiler(do_something, ('MEMORY',))
+  profile()
+  return
+  profile.visualize('MEMORY')
 
-profile.visualize('MEMORY')
+  profile_info = profile.spill()
+  for metric_type, metric_out in profile_info.items():
+    info = f'{metric_type} => {metric_out}'
+    print(info)
 
-profile_info = profile.spill()
-for metric_type, metric_out in profile_info.items():
-  info = f'{metric_type} => {metric_out}'
-  print(info)
+def do_torchprofile():
+  with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA], record_shapes=True) as prof:
+      with torch.profiler.record_function("do_something"):
+          do_something()
+
+from profiler import benchmark
+
+# warmup
+do_something()
+regular_time = benchmark.benchmark_ns(do_something)
+profile_time = benchmark.benchmark_ns(do_profile)
+torch_time = benchmark.benchmark_ns(do_torchprofile)
+torch_time = benchmark.benchmark_ns(do_torchprofile)
+
+print(f'regular time took: {regular_time}ns\n'
+      f'profile time took: {profile_time}ns\n'
+      f'torch time took: {torch_time}ns')
