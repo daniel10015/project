@@ -13,12 +13,12 @@ class metric_callback:
   
   def memory(self, activity) -> str:
     isAlloc = activity.memory_operation_type == cupti.ActivityMemoryOperationType.ALLOCATION
-    opTime = util.ns_to_s(activity.timestamp) - self.start_time_s
+    opTime = util.ns_to_s(activity.timestamp)
     opType = 'malloc' if isAlloc else 'free'
     size = activity.bytes
     addr = activity.address
     if self.memory_info.get(addr):
-      assert (not isAlloc) and self.memory_info[addr]['size'] == size, "activity should be a free but it's not"
+      assert (not isAlloc) and self.memory_info[addr]['size'] == size, f"activity ({activity.memory_operation_type}) should be a free but it's not"
       self.memory_info[addr]['end'] = opTime
     else:
       self.memory_info[addr] = {'size':size, 'start':opTime}
@@ -44,6 +44,8 @@ class metric_callback:
     # Compute cumulative utilization over time
     times, sizes = zip(*events)
     times = np.array(times)
+    times = times - np.min(times) # offset to 0
+    times, units = util.scale_time_units(times_ns=times)
     deltas = np.array(sizes)
     utilization = np.cumsum(deltas)
 
@@ -54,7 +56,7 @@ class metric_callback:
     plt.figure(figsize=(8, 4))
     plt.step(times, utilization_MB, where="post", lw=2)
     plt.fill_between(times, utilization_MB, step="post", alpha=0.3)
-    plt.xlabel("Time (s)")
+    plt.xlabel(f"Time ({units})")
     plt.ylabel("Memory (MB)")
     plt.title('Memory Utilization Over Time')
     plt.grid(True, linestyle="--", alpha=0.5)

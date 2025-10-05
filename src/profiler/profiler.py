@@ -44,14 +44,21 @@ class profiler():
         """
         for metric in self.metrics:
             cupti.activity_enable(metric_info.METRIC_TO_CUPTI[metric])
-        self.metric_callback.start_time_s = time() # it's fine for this to be slightly inaccurate
         self.fn(*args)
         cupti.activity_flush_all(1)
         for metric in self.metrics:
             cupti.activity_disable(metric_info.METRIC_TO_CUPTI[metric])
 
-    def visualize(self, metric_type: str):
-        self.metric_callback.render_type(metric_type)
+    def visualize(self, metric_types: tuple[str,...] = None):
+        """
+        Pass in the metrics you want to visualize.
+
+        Or, if nothing gets passed in, visualize on the metrics you processed
+        """
+        if metric_types == None:
+            metric_types = self.metrics
+        for metric_type in metric_types:
+            self.metric_callback.render_type(metric_type)
 
     def spill(self):
         return self.profile_out
