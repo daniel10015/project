@@ -40,3 +40,7 @@ Run the sample to see if you've installed CUPTI and torch correctly by following
 
 ## CUPTI tips
 - [Link to python tutorial](https://docs.nvidia.com/cupti-python/13.0.0/user-guide/topics/tutorial.html)
+
+## Steps to using the Profiler API
+- Any of the examples in the top level of the `src` dir
+- `src/example_matmul.py`
