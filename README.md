@@ -45,4 +45,4 @@ Run the sample to see if you've installed CUPTI and torch correctly by following
 - Any of the examples in the top level of the `src` dir
 - `src/example_matmul.py`
 - Running `src/example_matmul_stress.py` should give the output:
-- ![memory utilization](images/memory_utilization_0.png)
+![memory utilization](images/memory_utilization_0.png)
