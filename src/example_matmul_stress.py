@@ -1,9 +1,10 @@
 import torch
 import random
 import time
+from profiler.util import *
 
-num_iters = 128
-size_range = (64,256)
+num_iters = 128*8
+size_range = (32,1024)
 device = torch.device('cuda')
 random.seed(0)
 torch.manual_seed(0)
@@ -33,10 +34,13 @@ def func(num_iters, size_range):
     if device.type == "cuda" and i % 100 == 0:
       torch.cuda.synchronize()
       torch.cuda.empty_cache()
-      print(f"[{i:04d}] GPU allocated: {torch.cuda.memory_allocated()/1e6:.1f} MB")
+      print(f"[{i:04d}] GPU allocated: {b_to_mb(torch.cuda.memory_allocated()):.1f} MB")
 
 from profiler.profiler import profiler
 
 profile = profiler(fn=func, metrics=('MEMORY',))
+start = time.time()
 profile(num_iters, size_range)
+total_time = time.time() - start
+print(f'profiling function took: {1000*total_time}ms')
 profile.visualize()

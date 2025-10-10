@@ -4,6 +4,8 @@ import numpy as np
 def ns_to_s(val: float) -> float:
   return val*1e-9
 
+def b_to_mb(val: int) -> float:
+   return val * 1e-6
 
 def scale_time_units(times_ns):
     """

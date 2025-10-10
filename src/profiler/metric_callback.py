@@ -13,26 +13,32 @@ class metric_callback:
   
   def memory(self, activity) -> str:
     isAlloc = activity.memory_operation_type == cupti.ActivityMemoryOperationType.ALLOCATION
-    opTime = util.ns_to_s(activity.timestamp)
+    opTime = activity.timestamp
     opType = 'malloc' if isAlloc else 'free'
     size = activity.bytes
     addr = activity.address
     if self.memory_info.get(addr):
-      assert (not isAlloc) and self.memory_info[addr]['size'] == size, f"activity ({activity.memory_operation_type}) should be a free but it's not"
-      self.memory_info[addr]['end'] = opTime
+      if isAlloc:
+        assert self.memory_info[addr][-1].get('end', 1e20) < opTime, f'previous end time is {self.memory_info[addr][-1].get("end", 1e20)} but next alloc time is {opTime}'
+        self.memory_info[addr].append({'size':size, 'start':opTime})
+      else:
+        assert self.memory_info.get(addr)[-1].get('end') == None, f"writing end before start: {self.memory_info.get(addr)}"
+        assert size == self.memory_info.get(addr)[-1].get('size'), f'size different, free size is {size} but alloc size is {self.memory_info.get(addr)[-1].get("size")}'
+        self.memory_info[addr][-1]['end'] = opTime
     else:
-      self.memory_info[addr] = {'size':size, 'start':opTime}
+      self.memory_info[addr] = [{'size':size, 'start':opTime}]
     return (f'memory operation ({opType}) address {addr} at {opTime} of size {size}')
 
   def render_memory(self):
     events = []
 
     # Create (time, delta_size) pairs
-    for info in self.memory_info.values():
-        start, size = info['start'], info['size']
-        events.append((start, size))  # allocation event
-        if 'end' in info:
-            events.append((info['end'], -size))  # free event 
+    for info_list in self.memory_info.values():
+        for info in info_list:
+          start, size = info['start'], info['size']
+          events.append((start, size))  # allocation event
+          if 'end' in info:
+              events.append((info['end'], -size))  # free event 
 
     if not events:
         print("No events to plot.")
