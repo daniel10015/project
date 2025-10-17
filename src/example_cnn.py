@@ -1,32 +1,70 @@
 from torch import nn
 import torch
 from profiler.profiler import profiler
+from profiler.util import *
 
 class CNN(nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv = nn.Sequential(
-            nn.Conv2d(3, 16, 3, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-            nn.Conv2d(16, 32, 3, padding=1),
-            nn.ReLU(),
-            nn.AdaptiveAvgPool2d(1)
+        self.features = nn.Sequential(
+          nn.Conv2d(3, 64, 3, padding=1),  # 256x256 -> 256x256
+          nn.ReLU(inplace=True),
+          nn.Conv2d(64, 64, 3, padding=1),
+          nn.ReLU(inplace=True),
+          nn.MaxPool2d(2),  # 128x128
+
+          nn.Conv2d(64, 128, 3, padding=1),
+          nn.ReLU(inplace=True),
+          nn.Conv2d(128, 128, 3, padding=1),
+          nn.ReLU(inplace=True),
+          nn.MaxPool2d(2),  # 64x64
+
+          nn.Conv2d(128, 256, 3, padding=1),
+          nn.ReLU(inplace=True),
+          nn.Conv2d(256, 256, 3, padding=1),
+          nn.ReLU(inplace=True),
+          nn.MaxPool2d(2),  # 32x32
+
+          nn.Conv2d(256, 512, 3, padding=1),
+          nn.ReLU(inplace=True),
+          nn.Conv2d(512, 512, 3, padding=1),
+          nn.ReLU(inplace=True),
+          nn.MaxPool2d(2),  # 16x16
+
+          nn.Conv2d(512, 512, 3, padding=1),
+          nn.ReLU(inplace=True),
+          nn.AdaptiveAvgPool2d(1)
         )
-        self.fc = nn.Linear(32, 10)
+
+        self.fc = nn.Sequential(
+            nn.Linear(512, 512),
+            nn.ReLU(inplace=True),
+            nn.Linear(512, 10)
+        )
 
     def forward(self, x):
-        x = self.conv(x)
+        x = self.features(x)
         x = x.view(x.size(0), -1)
         return self.fc(x)
 
 def do_something():
-  x_cpu = torch.randn(8, 3, 32, 32)
-  x_gpu = x_cpu.to("cuda")
-  model = CNN().to("cuda")
-  output_gpu = model(x_gpu)
-  output_cpu = output_gpu.to("cpu")
-  print(x_cpu.device, output_gpu.device, output_cpu.device)
+  device = 'cuda'
+  model = CNN().to(device)
+  x = torch.randn(16, 3, 256, 256, device=device)  # Larger batch & resolution
+  optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+  criterion = nn.CrossEntropyLoss()
+  y = torch.randint(0, 10, (16,), device=device)
+
+  # Run multiple iterations to sustain GPU activity
+  for _ in range(5):  # Adjust if faster/slower
+      optimizer.zero_grad()
+      out = model(x)
+      loss = criterion(out, y)
+      loss.backward()
+      optimizer.step()
+
+  torch.cuda.synchronize()
+  print("Done.")
   torch.cuda.empty_cache()
 
 def do_profile():
@@ -34,28 +72,25 @@ def do_profile():
   profile()
 
 def do_torchprofile():
-  with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA], record_shapes=True) as prof:
+  with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CUDA],profile_memory=True) as prof:
       with torch.profiler.record_function("do_something"):
           do_something()
 
 from profiler import benchmark
 
+print('This test case will use about 3.8GB of memory')
+
 # warmup
+print('warmup')
 do_something()
-regular_time = benchmark.benchmark_ns(do_something)
-profile_time = benchmark.benchmark_ns(do_profile)
-torch_time = benchmark.benchmark_ns(do_torchprofile)
-torch_time = benchmark.benchmark_ns(do_torchprofile)
+print('finished warmup')
+regular_time = benchmark.benchmark_ns(do_something)[0]
+print('finished with regular time')
+profile_time = benchmark.benchmark_ns(do_profile)[0]
+print('finished with my_profile time')
+torch_time = benchmark.benchmark_ns(do_torchprofile)[0]
+print('finished with torch time')
 
-print(f'regular time took: {regular_time}ns\n'
-      f'profile time took: {profile_time}ns\n'
-      f'torch time took: {torch_time}ns')
-
-profile = profiler(do_something, ('MEMORY',))
-profile()
-profile.visualize('MEMORY')
-
-profile_info = profile.spill()
-for metric_type, metric_out in profile_info.items():
-  info = f'{metric_type} => {metric_out}'
-  print(info)
+print(f'regular time took: {ns_to_s(regular_time)}s\n'
+      f'profile time took: {ns_to_s(profile_time)}s\n'
+      f'torch time took: {ns_to_s(torch_time)}s')

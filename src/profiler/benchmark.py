@@ -2,21 +2,21 @@
 from time import perf_counter, perf_counter_ns, sleep
     
 
-def benchmark_s(func, *args) -> float:
+def benchmark_s(func, *args):
   """
   Assumes function is blocking, so when the function returns the execution is finished
   """
   start_time = perf_counter()
-  func(*args)
-  return perf_counter() - start_time
+  ret = func(*args)
+  return (perf_counter() - start_time, ret)
 
-def benchmark_ns(func, *args) -> int:
+def benchmark_ns(func, *args):
   """
   Assumes function is blocking, so when the function returns the execution is finished
   """
   start_time = perf_counter_ns()
-  func(*args)
-  return perf_counter_ns() - start_time
+  ret = func(*args)
+  return (perf_counter_ns() - start_time, ret)
 
 # Sample functions to test capabilities
 def sleep2second():

@@ -44,16 +44,17 @@ class profiler():
         """
         for metric in self.metrics:
             cupti.activity_enable(metric_info.METRIC_TO_CUPTI[metric])
-        self.fn(*args)
+        ret = self.fn(*args)
         cupti.activity_flush_all(1)
         for metric in self.metrics:
             cupti.activity_disable(metric_info.METRIC_TO_CUPTI[metric])
+        return ret
 
     def visualize(self, metric_types: tuple[str,...] = None):
         """
         Pass in the metrics you want to visualize.
 
-        Or, if nothing gets passed in, visualize on the metrics you processed
+        Or, if nothing gets passed in, visualize on all the metrics you processed
         """
         if metric_types == None:
             metric_types = self.metrics
