@@ -1,2 +1,2 @@
-Your environment name on Sol should be "py39cupti".
+Your environment name on Sol should be "cu13cupti".
 If not, change the .sh script accordingly.
