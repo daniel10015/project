@@ -1,0 +1,24 @@
+
+=====================================================================
+This module is only for creating or activating Python environments:
+$ mamba create -n myenv -c conda-forge python=3 <package_name>
+$ source activate myenv
+
+Only run "pip install" after activating an environment.
+Running pip without activating an environment is known to cause issues.
+
+To list available environments:
+$ mamba info --envs
+
+Other uses are not tested. More info: https://links.asu.edu/solpy
+=====================================================================
+
+  
+CUDA_VISIBLE_DEVICES = 0,1
+WORLD_SIZE = 4
+/home/zyin36/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py:4876: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  warnings.warn(  # warn only once
+[rank 3 / local rank 1] PASSED: 4.0 == 4.0
+[rank 2 / local rank 0] PASSED: 4.0 == 4.0
+[rank 1 / local rank 1] PASSED: 4.0 == 4.0
+[rank 0 / local rank 0] PASSED: 4.0 == 4.0

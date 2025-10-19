@@ -10,7 +10,7 @@
 
 # Activate the environment
 module load mamba/latest
-source activate py39cupti
+source activate cu13cupti
 
 echo "CUDA_VISIBLE_DEVICES = $CUDA_VISIBLE_DEVICES"
 

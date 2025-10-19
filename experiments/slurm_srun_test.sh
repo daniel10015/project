@@ -9,7 +9,7 @@
 
 # Activate the environment
 module load mamba/latest
-source activate py39cupti
+source activate cu13cupti
 
 # Derive MASTER_ADDR / MASTER_PORT from SLURM
 export WORLD_SIZE=$(($SLURM_NNODES * $SLURM_NTASKS_PER_NODE))
