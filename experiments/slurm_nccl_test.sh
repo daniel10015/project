@@ -19,7 +19,8 @@ export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
 export MASTER_PORT=16961
 
 export WORLD_SIZE=$(($SLURM_NNODES * $SLURM_NTASKS_PER_NODE))
-
+export RANK=$SLURM_PROCID
+export LOCAL_RANK=$SLURM_LOCALID
 echo "WORLD_SIZE = $WORLD_SIZE"
 
 srun python nccl_test.py
