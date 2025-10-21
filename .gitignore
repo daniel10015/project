@@ -1,4 +1,5 @@
 myenv
 .vscode
 *.pyc
+*.tar.gz
 ./experiments/datasets
