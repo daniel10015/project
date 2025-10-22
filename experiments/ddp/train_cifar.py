@@ -18,6 +18,7 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import ToTensor
 from torch.utils.data.distributed import DistributedSampler
 import torch.optim as optim
+from torch.profiler import profile, ProfilerActivity, record_function
 
 
 def train_epoch(model, local_rank, train_loader, optimizer, epoch):
@@ -45,7 +46,7 @@ def test_model(model, device):
         total_correct += (y_hat == y).sum()
         total += len(y)
 
-        print("Testset Accuracy: ", total_correct / total)
+    print("Testset Accuracy: ", total_correct / total)
 
 
 def run(num_epochs, rank, local_rank):
@@ -82,13 +83,13 @@ if __name__=="__main__":
     # MASTER_ADDR and MASTER_PORT are set by the slurm script
     dist.init_process_group(backend='nccl', init_method='env://', rank=rank, world_size=world_size)
 
-    ## the i-th task in each node uses the i-th gpu
+    ## the i-th task in each node uses the i-th gplocal_ranku
     ## (assuming 1 GPU per task)
-    # torch.cuda.set_device(local_rank)
-    run(num_epochs=10, rank=rank, local_rank=local_rank)
-
-    # wait for other processes to finish
-    # dist.barrier()
+    activities = [ProfilerActivity.CPU, ProfilerActivity.CUDA]
+    with profile(activities=activities) as prof:
+        run(num_epochs=10, rank=rank, local_rank=local_rank)
+    
+    prof.export_chrome_trace(f"trace_{rank}.json")
     # clean up
     dist.destroy_process_group()
 
