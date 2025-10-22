@@ -1,12 +1,11 @@
 #!/bin/bash
-#SBATCH -q public                  
+#SBATCH -q debug                  
 #SBATCH --job-name=train-cifar
-#SBATCH -N 4                    # number of nodes
-#SBATCH --ntasks-per-node=1     # number of processes per node
-#SBATCH -c 1			# cores per process
-#SBATCH --gpus-per-node=1       # GPUs per node
-#SBATCH --time=10
-#SBATCH --output=train-cifar-%j.out
+#SBATCH -N 2                    # number of nodes
+#SBATCH --ntasks-per-node=2     # number of processes per node (should equal to num of GPUS)
+#SBATCH -c 4			# cores per process
+#SBATCH --gpus-per-node=2      # GPUs per node
+#SBATCH --time=5
 
 # Activate the environment
 module load mamba/latest
