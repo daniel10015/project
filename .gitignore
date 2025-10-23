@@ -3,3 +3,4 @@ myenv
 *.pyc
 *.tar.gz
 ./experiments/datasets
+experiments/datasets/*
