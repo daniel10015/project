@@ -63,18 +63,18 @@ def do_something():
       loss.backward()
       optimizer.step()
 
-  torch.cuda.synchronize()
-  print("Done.")
-  torch.cuda.empty_cache()
-
 def do_profile():
-  profile = profiler(do_something, ('MEMORY',))
+  profile = profiler(do_something, ('MEMCPY',))
   profile()
+  profile.visualize()
 
 def do_torchprofile():
   with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CUDA],profile_memory=True) as prof:
       with torch.profiler.record_function("do_something"):
           do_something()
+
+do_profile()
+exit(0)
 
 from profiler import benchmark
 
