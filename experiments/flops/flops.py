@@ -29,7 +29,7 @@ class MyModel(nn.Module):
       nn.Linear(64, 64),
       nn.ReLU(),
       nn.Linear(64, 10),
-      nn.Sigmoid()
+      nn.Softmax(dim=0)
     )
 
   def forward(self, X):
