@@ -38,6 +38,8 @@ class MyModel(nn.Module):
 model = MyModel()
 model.to(device)
 X = torch.randn(28, 28).flatten().to(device) # Batch size 1, 1 channels, 28x28 image
+flops = FlopCountAnalysis(model, X) # does a static analysis of FLOPs
+print('it appears since these are just approximiations, layers like relu are negligible so they are 0')
 
 def func_buffer_requested():
   buffer_size = 8 * 1024 * 1024  # 8MB buffer
@@ -45,10 +47,17 @@ def func_buffer_requested():
   return buffer_size, max_num_records
 
 def func_buffer_completed(activities: list):
-  for activity in activities:
-    if activity.kind == cupti.ActivityKind.CONCURRENT_KERNEL:
+  flop_op = flops.by_module()
+  for i, activity in enumerate(activities):
+    duration_ns = activity.end - activity.start
+    layer_name = f'layers.{i}'
+    flop_quantity = flop_op.get(layer_name)
+    if flop_quantity > 0 and duration_ns > 0:
       print(f"kernel name = {activity.name}")
-      print(f"kernel duration (ns) = {activity.end - activity.start}")
+      print(f"kernel duration (ns) = {duration_ns}")
+      print(f'TFLOPs: {1e-12*(flop_quantity/(duration_ns*1e-9))}')
+      print('')
+
 
 #Step 1: Register CUPTI callbacks
 cupti.activity_register_callbacks(func_buffer_requested, func_buffer_completed)
@@ -56,14 +65,13 @@ cupti.activity_register_callbacks(func_buffer_requested, func_buffer_completed)
 #Step 2: Enable CUPTI Activity Collection
 cupti.activity_enable(cupti.ActivityKind.CONCURRENT_KERNEL)
 
-flops = FlopCountAnalysis(model, X) # does a static analysis of FLOPs
 model(X)
 
 #Step 3: Flushing and Disabling CUPTI Activity
 cupti.activity_flush_all(1)
 cupti.activity_disable(cupti.ActivityKind.CONCURRENT_KERNEL)
 print('finished collecting metrics\n----------')
-
+exit(0)
 # Total FLOPs for the entire model
 total_flops = flops.total()
 print(f"Total FLOPs: {total_flops}\n")
