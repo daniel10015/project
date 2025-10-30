@@ -3,6 +3,11 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
+from time import time
+
+# globals
+PROGRAM_START_TIME=0
+
 MEMCPY_KIND_STR = {
     0: "Unknown",
     1: "Host -> Device",
@@ -26,10 +31,7 @@ def func_buffer_requested():
 def func_buffer_completed(activities: list):
   for activity in activities:
     if activity.kind == cupti.ActivityKind.MEMCPY:
-       print(f"Memcpy {MEMCPY_KIND_STR[activity.copy_kind]} of {activity.bytes} bytes on stream {activity.stream_id} duration (ns) = {activity.end - activity.start}")
-
-cupti.activity_register_callbacks(func_buffer_requested, func_buffer_completed)
-cupti.activity_enable(cupti.ActivityKind.MEMCPY)
+       print(f"Memcpy {MEMCPY_KIND_STR[activity.copy_kind]} of {activity.bytes} bytes on stream {activity.stream_id}, at {activity.start*1e-9 - PROGRAM_START_TIME}s from duration (ns) = {activity.end - activity.start}")
 
 class CNN(nn.Module):
     def __init__(self):
@@ -49,7 +51,20 @@ class CNN(nn.Module):
         x = x.view(x.size(0), -1)
         return self.fc(x)
 
+cupti.activity_register_callbacks(func_buffer_requested, func_buffer_completed)
+cupti.activity_enable(cupti.ActivityKind.MEMCPY)
+
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+PROGRAM_START_TIME = time()
+
+# 1000ms in 1s, so 0.001s=1ms
+# 100us
+# 0.ms  us  ns
+# 0.284 714 xxx
+# 0.284 767 xxx
+
 model = CNN().to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 criterion = nn.CrossEntropyLoss()
