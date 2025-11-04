@@ -35,6 +35,36 @@ class MyModel(nn.Module):
   def forward(self, X):
     return self.layers(X)
   
+call_stack = []
+
+def trace_calls(frame, event, arg):
+    if event == "call":
+        # On "call" event, a new function is pushed onto the actual call stack.
+        # We simulate a "unique ID" for the function call instance by storing 
+        # a unique object, like the frame object itself, or simply a representation
+        # of the function being called.
+        func_name = frame.f_code.co_name
+        # Store a representation of the call instance on our custom stack
+        call_info = {"name": func_name, "frame": frame, "id": id(frame)}
+        call_stack.append(call_info)
+        print(f"-> [PUSH]: (ID: {call_info['id']}) '{func_name}' called {frame.f_code.co_filename}:{frame.f_lineno}")
+        
+    elif event == "return":
+        # On "return" event, the current function is popped off the actual stack.
+        # We pop from our custom stack to get the unique instance info.
+        func_name = frame.f_code.co_name
+        if call_stack:
+            popped_call = call_stack.pop()
+            print(f"<- [POP]: (ID: {popped_call['id']}) '{func_name}'")
+        else:
+            # This case might happen for tracing at global scope or built-ins
+            print(f"<- [POP]: empty stack '{func_name}'")
+            
+    # The trace function must return itself or another trace function for the new scope
+    return trace_calls
+import sys
+sys.settrace(trace_calls)
+
 model = MyModel()
 model.to(device)
 X = torch.randn(28, 28).flatten().to(device) # Batch size 1, 1 channels, 28x28 image
@@ -48,10 +78,13 @@ def func_buffer_requested():
 
 def func_buffer_completed(activities: list):
   flop_op = flops.by_module()
+  print(flop_op)
   for i, activity in enumerate(activities):
     duration_ns = activity.end - activity.start
     layer_name = f'layers.{i}'
     flop_quantity = flop_op.get(layer_name)
+    print(layer_name)
+    print(flop_quantity)
     if flop_quantity > 0 and duration_ns > 0:
       print(f"kernel name = {activity.name}")
       print(f"kernel duration (ns) = {duration_ns}")
@@ -60,30 +93,14 @@ def func_buffer_completed(activities: list):
 
 
 #Step 1: Register CUPTI callbacks
-cupti.activity_register_callbacks(func_buffer_requested, func_buffer_completed)
+#cupti.activity_register_callbacks(func_buffer_requested, func_buffer_completed)
 
 #Step 2: Enable CUPTI Activity Collection
-cupti.activity_enable(cupti.ActivityKind.CONCURRENT_KERNEL)
+#cupti.activity_enable(cupti.ActivityKind.CONCURRENT_KERNEL)
 
 model(X)
 
 #Step 3: Flushing and Disabling CUPTI Activity
-cupti.activity_flush_all(1)
-cupti.activity_disable(cupti.ActivityKind.CONCURRENT_KERNEL)
-print('finished collecting metrics\n----------')
-exit(0)
-# Total FLOPs for the entire model
-total_flops = flops.total()
-print(f"Total FLOPs: {total_flops}\n")
-
-# FLOPs by operator type
-flops_by_operator = flops.by_operator()
-print(f"FLOPs by operator: {flops_by_operator}\n")
-
-# FLOPs by module
-flops_by_module = flops.by_module()
-print(f"FLOPs by module: {flops_by_module}\n")
-
-# FLOPs by module and operator
-flops_by_module_and_operator = flops.by_module_and_operator()
-print(f"FLOPs by module and operator: {flops_by_module_and_operator}\n")
+#cupti.activity_flush_all(1)
+#cupti.activity_disable(cupti.ActivityKind.CONCURRENT_KERNEL)
+#print('finished collecting metrics\n----------')

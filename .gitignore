@@ -4,3 +4,5 @@ myenv
 *.tar.gz
 ./experiments/datasets
 **/datasets/
+out
+log/
