@@ -1,0 +1,31 @@
+
+=====================================================================
+This module is only for creating or activating Python environments:
+$ mamba create -n myenv -c conda-forge python=3 <package_name>
+$ source activate myenv
+
+Only run "pip install" after activating an environment.
+Running pip without activating an environment is known to cause issues.
+
+To list available environments:
+$ mamba info --envs
+
+Other uses are not tested. More info: https://links.asu.edu/solpy
+=====================================================================
+
+  
+CUDA_VISIBLE_DEVICES = 0,1
+WORLD_SIZE = 4
+[rank1]:[W1026 19:14:32.346579838 execution_trace_observer.cpp:1010] Enabling Execution Trace Observer
+[rank2]:[W1026 19:14:33.639244091 execution_trace_observer.cpp:1010] Enabling Execution Trace Observer
+[rank0]:[W1026 19:14:33.986979338 execution_trace_observer.cpp:1010] Enabling Execution Trace Observer
+[rank3]:[W1026 19:14:33.872138377 execution_trace_observer.cpp:1010] Enabling Execution Trace Observer
+(Rank 3, Local 1) cuda:1
+(Rank 2, Local 0) cuda:0
+(Rank 0, Local 0) cuda:0
+(Rank 1, Local 1) cuda:1
+[rank1]:[W1026 19:14:48.764974357 execution_trace_observer.cpp:1022] Disabling Execution Trace Observer
+[rank2]:[W1026 19:14:48.630180788 execution_trace_observer.cpp:1022] Disabling Execution Trace Observer
+[rank3]:[W1026 19:14:48.686039393 execution_trace_observer.cpp:1022] Disabling Execution Trace Observer
+[rank0]:[W1026 19:14:51.558222863 execution_trace_observer.cpp:1022] Disabling Execution Trace Observer
+Testset Accuracy:  tensor(0.6187, device='cuda:0')
