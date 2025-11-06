@@ -18,25 +18,32 @@ call_stack = []
 
 def trace_calls(frame, event, arg):
     if event == "call":
-        # On "call" event, a new function is pushed onto the actual call stack.
-        # We simulate a "unique ID" for the function call instance by storing 
-        # a unique object, like the frame object itself, or simply a representation
-        # of the function being called.
         func_name = frame.f_code.co_name
-        # Store a representation of the call instance on our custom stack
-        call_info = {"name": func_name, "frame": frame, "id": id(frame)}
+        class_name = None
+
+        # Try to get 'self' (for instance methods) or 'cls' (for class methods)
+        locals_ = frame.f_locals
+        if 'self' in locals_:
+            class_name = locals_['self'].__class__.__name__
+        elif 'cls' in locals_ and isinstance(locals_['cls'], type):
+            class_name = locals_['cls'].__name__
+
+        # Combine class name and function name if available
+        full_name = f"{class_name}.{func_name}" if class_name else func_name
+
+        # You can also show the filename
+        filename = frame.f_code.co_filename
+        call_info = {"name": full_name, "frame": frame, "id": id(frame)}
         call_stack.append(call_info)
-        print(f"-> [PUSH]: (ID: {call_info['id']}) '{func_name}' from [TODO fillin filename]")
-        
+
+        print(f"-> [PUSH]: (ID: {call_info['id']}) '{full_name}' from {filename}")
+
     elif event == "return":
-        # On "return" event, the current function is popped off the actual stack.
-        # We pop from our custom stack to get the unique instance info.
         func_name = frame.f_code.co_name
         if call_stack:
             popped_call = call_stack.pop()
-            print(f"<- [POP]: (ID: {popped_call['id']}) '{func_name}'")
+            print(f"<- [POP]: (ID: {popped_call['id']}) '{popped_call['name']}'")
         else:
-            # This case might happen for tracing at global scope or built-ins
             print(f"<- [POP]: empty stack '{func_name}'")
             
     # The trace function must return itself or another trace function for the new scope
@@ -48,8 +55,9 @@ sys.settrace(trace_calls)
 with torch.profiler.profile(
     activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
     schedule=torch.profiler.schedule(wait=1, warmup=1, active=3, repeat=1),
+    profile_memory=True,
     on_trace_ready=torch.profiler.tensorboard_trace_handler('./log/resnet18_forward_trace'),
-    with_stack=True # Enable stack tracing
+    #with_stack=True # Enable stack tracing
 ) as prof:
     for i in range(5):
         if i >= 2: # Active steps

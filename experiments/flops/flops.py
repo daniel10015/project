@@ -39,28 +39,34 @@ call_stack = []
 
 def trace_calls(frame, event, arg):
     if event == "call":
-        # On "call" event, a new function is pushed onto the actual call stack.
-        # We simulate a "unique ID" for the function call instance by storing 
-        # a unique object, like the frame object itself, or simply a representation
-        # of the function being called.
         func_name = frame.f_code.co_name
-        # Store a representation of the call instance on our custom stack
-        call_info = {"name": func_name, "frame": frame, "id": id(frame)}
+        class_name = None
+
+        # Check if this is a method call and extract class name if possible
+        locals_ = frame.f_locals
+        if 'self' in locals_:
+            # instance method
+            class_name = locals_['self'].__class__.__name__
+        elif 'cls' in locals_ and isinstance(locals_['cls'], type):
+            # class method
+            class_name = locals_['cls'].__name__
+
+        # Combine class and function names
+        full_name = f"{class_name}.{func_name}" if class_name else func_name
+
+        call_info = {"name": full_name, "frame": frame, "id": id(frame)}
         call_stack.append(call_info)
-        print(f"-> [PUSH]: (ID: {call_info['id']}) '{func_name}' called {frame.f_code.co_filename}:{frame.f_lineno}")
+
+        print(f"-> [PUSH]: (ID: {call_info['id']}) '{full_name}' called {frame.f_code.co_filename}:{frame.f_lineno}")
         
     elif event == "return":
-        # On "return" event, the current function is popped off the actual stack.
-        # We pop from our custom stack to get the unique instance info.
         func_name = frame.f_code.co_name
         if call_stack:
             popped_call = call_stack.pop()
-            print(f"<- [POP]: (ID: {popped_call['id']}) '{func_name}'")
+            print(f"<- [POP]: (ID: {popped_call['id']}) '{popped_call['name']}'")
         else:
-            # This case might happen for tracing at global scope or built-ins
             print(f"<- [POP]: empty stack '{func_name}'")
             
-    # The trace function must return itself or another trace function for the new scope
     return trace_calls
 import sys
 sys.settrace(trace_calls)
