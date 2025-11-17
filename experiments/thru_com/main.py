@@ -44,7 +44,9 @@ class ExtractModel:
   def __init__(self, root_class_name):
     self.root_cls = root_class_name
     self.layers = {}
+    self.flops_by_module = {} 
     self.tracking = [] # per batch  
+
   def benchmark_ns(self, func, *args):
     """
     Assumes function is blocking, so when the function returns the execution is finished.
@@ -52,14 +54,36 @@ class ExtractModel:
     start_time = my_timer()
     ret = func(*args)
     time_elapsed = my_timer() - start_time
-    func_name = f'{self.root_cls}.{func.__class__.__name__}'
-    #print(f'function: {func_name} took {time_elapsed/1e6}ms')
-    return ret
+    
+    name = getattr(func, "_prof_name", func.__class__.__name__)
 
+    if name not in self.layers:
+            self.layers[name] = {
+                "time_ns": [],
+                "flops": self.flops_by_module.get(name, None),
+                "throughput": []  # FLOPs per second
+            }
+
+    self.layers[name]["time_ns"].append(time_elapsed)
+
+    fl = self.layers[name]["flops"]
+    if fl is not None and time_elapsed > 0:
+        t_sec = time_elapsed * 1e-9
+        thr = fl / t_sec  # FLOPs / sec
+        self.layers[name]["throughput"].append(thr)
+        print(
+            f'layer {name}: time={time_elapsed/1e6:.3f} ms, '
+            f'FLOPs={fl}, throughput={thr/1e12:.3f} TFLOPs'
+        )
+    else:
+        print(f'layer {name}: time={time_elapsed/1e6:.3f} ms (no FLOPs info)')
+
+    return ret
+    
 profile = ExtractModel('SmallResnet')
 
 class ResidualBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, stride=1, do_1x1=False):
+    def __init__(self, in_channels, out_channels, stride=1, do_1x1=False, block_name=None):
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1)
         self.bn1 = nn.BatchNorm2d(out_channels)
@@ -69,16 +93,40 @@ class ResidualBlock(nn.Module):
         self.do1x1 = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride) if do_1x1 else None
         self.final_relu = nn.ReLU(inplace=True)
 
+        if block_name is not None:
+            base = block_name
+            self.conv1._prof_name = f"{base}.conv1"
+            self.bn1._prof_name   = f"{base}.bn1"
+            self.relu1._prof_name = f"{base}.relu1"
+            self.conv2._prof_name = f"{base}.conv2"
+            self.bn2._prof_name   = f"{base}.bn2"
+            if self.do1x1 is not None:
+                self.do1x1._prof_name = f"{base}.do1x1"
+            self.final_relu._prof_name = f"{base}.final_relu"
+
     def forward(self, X):
-        x = self.conv1(X)
-        x = self.bn1(x)
-        x = self.relu1(x)
-        x = self.conv2(x)
-        x = self.bn2(x)
-        identity = X
-        if self.do1x1 is not None:
-            identity = self.do1x1(identity)
-        return self.final_relu(identity + x)
+        if self.training:
+            x = profile.benchmark_ns(self.conv1, X)
+            x = profile.benchmark_ns(self.bn1, x)
+            x = profile.benchmark_ns(self.relu1, x)
+            x = profile.benchmark_ns(self.conv2, x)
+            x = profile.benchmark_ns(self.bn2, x)
+            identity = X
+            if self.do1x1 is not None:
+                identity = profile.benchmark_ns(self.do1x1, identity)
+            out = identity + x
+            out = profile.benchmark_ns(self.final_relu, out)
+            return out
+        else:
+            x = self.conv1(X)
+            x = self.bn1(x)
+            x = self.relu1(x)
+            x = self.conv2(x)
+            x = self.bn2(x)
+            identity = X
+            if self.do1x1 is not None:
+                identity = self.do1x1(identity)
+            return self.final_relu(identity + x)
 
 class SmallResidualNetwork(nn.Module):
     def __init__(self, num_classes=10):
@@ -88,26 +136,48 @@ class SmallResidualNetwork(nn.Module):
         self.relu1 = nn.ReLU(inplace=True)
         self.pool1 = nn.MaxPool2d(3, stride=2)
 
-        self.block1 = ResidualBlock(8, 16, stride=2, do_1x1=True)
-        self.block2 = ResidualBlock(16, 32, stride=2, do_1x1=True)
-        self.block3 = ResidualBlock(32, 64, stride=1, do_1x1=True)
+        self.block1 = ResidualBlock(8, 16, stride=2, do_1x1=True, block_name="block1")
+        self.block2 = ResidualBlock(16, 32, stride=2, do_1x1=True, block_name="block2")
+        self.block3 = ResidualBlock(32, 64, stride=1, do_1x1=True, block_name="block3")
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))  # safer than fixed 8x8
         self.fc = nn.Linear(64, num_classes)
 
+        self.conv1._prof_name  = "conv1"
+        self.bn1._prof_name    = "bn1"
+        self.relu1._prof_name  = "relu1"
+        self.pool1._prof_name  = "pool1"
+        self.avgpool._prof_name = "avgpool"
+        self.fc._prof_name     = "fc"
+
     def forward(self, X):
-        X = self.conv1(X)
-        X = self.bn1(X)
-        X = self.relu1(X)
-        X = self.pool1(X)
+        if self.training:
+            X = profile.benchmark_ns(self.conv1, X)
+            X = profile.benchmark_ns(self.bn1, X)
+            X = profile.benchmark_ns(self.relu1, X)
+            X = profile.benchmark_ns(self.pool1, X)
 
-        X = self.block1(X)
-        X = self.block2(X)
-        X = self.block3(X)
+            # you can either time block as a whole:
+            X = profile.benchmark_ns(self.block1, X)
+            X = profile.benchmark_ns(self.block2, X)
+            X = profile.benchmark_ns(self.block3, X)
 
-        X = profile.benchmark_ns(self.avgpool, X)
-        X = X.view(X.size(0), -1)
-        X = self.fc(X)
+            X = profile.benchmark_ns(self.avgpool, X)
+            X = X.view(X.size(0), -1)
+            X = profile.benchmark_ns(self.fc, X)
+        else:
+            X = self.conv1(X)
+            X = self.bn1(X)
+            X = self.relu1(X)
+            X = self.pool1(X)
+            X = self.block1(X)
+            X = self.block2(X)
+            X = self.block3(X)
+            X = self.avgpool(X)
+            X = X.view(X.size(0), -1)
+            X = self.fc(X)
+
+
         return X
 
 # ----- setup memory transfer callbacks -----
@@ -151,6 +221,7 @@ def func_buffer_completed(activities: list):
 
 
 # ----- setup model and data -----
+
 # setup transforms
 transform = transforms.Compose([
     transforms.Resize((64, 64)),
@@ -167,6 +238,8 @@ test_data = datasets.CIFAR10(root='./data', train=False, download=True, transfor
 train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=2)
 test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False, num_workers=2)
 
+print("Number of train batches:", len(train_loader))
+print("Number of test batches:", len(test_loader))
 
 if not torch.cuda.is_available():
     print('warning, cuda is not available! Using cpu instead')
@@ -183,10 +256,21 @@ batch_no_count = 2
 accuracy_epoch_train = []
 accuracy_epoch_valid = []
 
-# Pull 1 batch
-X = next(iter(train_loader))[0].to(device)
-flops = FlopCountAnalysis(model, X)
-print(f'flops by module: {flops.by_module()}')
+
+X_example = next(iter(train_loader))[0].to(device)
+
+was_training = model.training  
+model.eval()                  
+
+#  FLOP calculation
+fa = FlopCountAnalysis(model, X_example)
+profile.flops_by_module = dict(fa.by_module())
+
+if was_training:
+    model.train()
+
+print("FLOPs by module:", profile.flops_by_module)
+
 
 # start data collection right before training loop
 cupti.activity_register_callbacks(func_buffer_requested, func_buffer_completed)
@@ -208,6 +292,7 @@ for epoch in range(1, epoch_count + 1):
 
         optimizer.zero_grad()
         pred = model(data)
+        print("==============================================")
         val = loss_fn(pred, label)
         val.backward()
         optimizer.step()
