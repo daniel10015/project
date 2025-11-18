@@ -40,6 +40,9 @@ def scale_time_units(times_ns):
 
     return times, units[idx]
 
+# ------------------------------------
+# timer for each module and FLOPs calculator
+# ------------------------------------
 class ExtractModel:
   def __init__(self, root_class_name):
     self.root_cls = root_class_name
@@ -79,9 +82,14 @@ class ExtractModel:
         print(f'layer {name}: time={time_elapsed/1e6:.3f} ms (no FLOPs info)')
 
     return ret
-    
+
+
 profile = ExtractModel('SmallResnet')
 
+
+# ------------------------------------
+# Model define 
+# ------------------------------------
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels, stride=1, do_1x1=False, block_name=None):
         super().__init__()
@@ -180,6 +188,11 @@ class SmallResidualNetwork(nn.Module):
 
         return X
 
+
+
+# ==============================
+# CUPTI MEMCPY collect util
+# ==============================
 # ----- setup memory transfer callbacks -----
 debug = False
 MEMCPY_KIND_STR = {
@@ -219,77 +232,98 @@ def func_buffer_completed(activities: list):
     if activity.kind == cupti.ActivityKind.MEMCPY:
         memcpy_info.memcpy(activity)
 
+def setup_cupti():
+    # start data collection right before training loop
+    cupti.activity_register_callbacks(func_buffer_requested, func_buffer_completed)
+    cupti.activity_enable(cupti.ActivityKind.MEMCPY)
 
-# ----- setup model and data -----
+def finalize_cupti():
+    cupti.activity_flush_all(1)
+    cupti.activity_disable(cupti.ActivityKind.MEMCPY)
 
-# setup transforms
-transform = transforms.Compose([
-    transforms.Resize((64, 64)),
-    transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-])
+def plot_memcpy_timeline(memcpy_info: MemoryCopy):
+    # Sort events by time
+    memcpy_info.memcpy_info.sort(key=lambda x: x[0])
 
-batch_size = 64
-# download data with transformations
-train_data = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
-test_data = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
+    # Compute cumulative utilization over time
+    times, sizes, kinds = zip(*memcpy_info.memcpy_info)
+    times = np.array(times)
+    times = times - np.min(times) # offset to 0
+    times, units = scale_time_units(times_ns=times)
+    deltas = np.array(sizes)
+    utilization = np.cumsum(deltas)
 
-# load data
-train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=2)
-test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False, num_workers=2)
+    # Convert to unit
+    utilization_unit = utilization
 
-print("Number of train batches:", len(train_loader))
-print("Number of test batches:", len(test_loader))
+    # Define colors
+    colors = {
+        "Host -> Device": "tab:green",   # CPU → GPU
+        "Device -> Host": "tab:blue",     # GPU → CPU
+        "Other": "tab:gray"
+    }
 
-if not torch.cuda.is_available():
-    print('warning, cuda is not available! Using cpu instead')
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = SmallResidualNetwork(num_classes=10).to(device)
-lr = 0.005
-momentum = 0.9
+    # Split the data into segments by kind
+    plt.figure(figsize=(9, 5))
+    for kind_str in ["Host -> Device", "Device -> Host", "Other"]:
+        mask = np.array([
+            (MEMCPY_KIND_STR.get(k, "Other") == kind_str)
+            if k in MEMCPY_KIND_STR else False
+            for k in kinds
+        ])
+        if not np.any(mask):
+            continue
+        plt.step(times[mask], utilization_unit[mask], where="post",
+                lw=2, label=kind_str, color=colors[kind_str])
 
-optimizer = torch.optim.SGD(params=model.parameters(), lr=lr, momentum=momentum)
-loss_fn = nn.CrossEntropyLoss()
-epoch_count = 1
-batch_no_count = 2
+    plt.fill_between(times, utilization_unit, step="post", alpha=0.2, color="lightgray")
+    plt.xlabel(f"Time ({units})")
+    plt.ylabel("bytes")
+    plt.yscale('log')
+    plt.title("Memory Copies Over Time (log-scale)")
+    plt.grid(True, linestyle="--", alpha=0.5)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
 
-accuracy_epoch_train = []
-accuracy_epoch_valid = []
+# ==============================
+# dataloader util
+# ==============================
+def get_dataloaders(batch_size: int = 64):
+    # setup transforms
+    transform = transforms.Compose([
+        transforms.Resize((64, 64)),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+
+    batch_size = 64
+    # download data with transformations
+    train_data = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
+    test_data = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
+
+    # load data
+    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=2)
+    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False, num_workers=2)
+
+    print("Number of train batches:", len(train_loader))
+    print("Number of test batches:", len(test_loader))
+    return train_loader, test_loader
 
 
-X_example = next(iter(train_loader))[0].to(device)
-
-was_training = model.training  
-model.eval()                  
-
-#  FLOP calculation
-fa = FlopCountAnalysis(model, X_example)
-profile.flops_by_module = dict(fa.by_module())
-
-if was_training:
-    model.train()
-
-print("FLOPs by module:", profile.flops_by_module)
-
-
-# start data collection right before training loop
-cupti.activity_register_callbacks(func_buffer_requested, func_buffer_completed)
-cupti.activity_enable(cupti.ActivityKind.MEMCPY)
-
-# -------------------------------------
-# Training Loop
-# -------------------------------------
-start_time = my_timer()
-for epoch in range(1, epoch_count + 1):
+# ==============================
+# Training / Validation 
+# ==============================
+def train_one_epoch(model, train_loader, optimizer, loss_fn, device, max_batches=None):
     model.train(True)
     correct = 0
     total = 0
 
     for i, (data, label) in enumerate(train_loader):
-        if i >= batch_no_count:
-           break
-        data, label = data.to(device), label.to(device)
+        if max_batches is not None and i >= max_batches:
+            break
 
+        data, label = data.to(device), label.to(device)
         optimizer.zero_grad()
         pred = model(data)
         print("==============================================")
@@ -301,13 +335,11 @@ for epoch in range(1, epoch_count + 1):
         correct += (preds == label).sum().item()
         total += label.size(0)
 
-    train_acc = correct / total
-    accuracy_epoch_train.append(train_acc)
+    return correct / total
 
-    # Validation loop
+def eval_one_epoch(model, test_loader, device):
     model.train(False)
-    correct = 0
-    total = 0
+    correct, total = 0, 0
     with torch.no_grad():
         for data, label in test_loader:
             data, label = data.to(device), label.to(device)
@@ -315,55 +347,77 @@ for epoch in range(1, epoch_count + 1):
             preds = torch.argmax(pred, dim=1)
             correct += (preds == label).sum().item()
             total += label.size(0)
+    return correct / total
 
-    valid_acc = correct / total
-    accuracy_epoch_valid.append(valid_acc)
 
-    print(f"Epoch [{epoch}/{epoch_count}] | Train Acc: {train_acc:.4f} | Valid Acc: {valid_acc:.4f}")
 
-print(f"Training complete. Took {my_timer() - start_time}")
-cupti.activity_flush_all(1)
-cupti.activity_disable(cupti.ActivityKind.MEMCPY)
-# Sort events by time
-memcpy_info.memcpy_info.sort(key=lambda x: x[0])
+# ==============================
+# main funciton
+# ==============================
+def main():
+    batch_size = 64
+    epoch_count = 1
+    batch_no_count = 2
 
-# Compute cumulative utilization over time
-times, sizes, kinds = zip(*memcpy_info.memcpy_info)
-times = np.array(times)
-times = times - np.min(times) # offset to 0
-times, units = scale_time_units(times_ns=times)
-deltas = np.array(sizes)
-utilization = np.cumsum(deltas)
+    if not torch.cuda.is_available():
+        print('warning, cuda is not available! Using cpu instead')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# Convert to unit
-utilization_unit = utilization
+    train_loader, test_loader = get_dataloaders(batch_size=batch_size)
 
-# Define colors
-colors = {
-    "Host -> Device": "tab:green",   # CPU → GPU
-    "Device -> Host": "tab:blue",     # GPU → CPU
-    "Other": "tab:gray"
-}
+    model = SmallResidualNetwork(num_classes=10).to(device)
 
-# Split the data into segments by kind
-plt.figure(figsize=(9, 5))
-for kind_str in ["Host -> Device", "Device -> Host", "Other"]:
-    mask = np.array([
-        (MEMCPY_KIND_STR.get(k, "Other") == kind_str)
-        if k in MEMCPY_KIND_STR else False
-        for k in kinds
-    ])
-    if not np.any(mask):
-        continue
-    plt.step(times[mask], utilization_unit[mask], where="post",
-             lw=2, label=kind_str, color=colors[kind_str])
+    lr = 0.005
+    momentum = 0.9
 
-plt.fill_between(times, utilization_unit, step="post", alpha=0.2, color="lightgray")
-plt.xlabel(f"Time ({units})")
-plt.ylabel("bytes")
-plt.yscale('log')
-plt.title("Memory Copies Over Time (log-scale)")
-plt.grid(True, linestyle="--", alpha=0.5)
-plt.legend()
-plt.tight_layout()
-plt.show()
+    optimizer = torch.optim.SGD(params=model.parameters(), lr=lr, momentum=momentum)
+    loss_fn = nn.CrossEntropyLoss()
+
+    # module FLOPs calculation (1 times)
+    X_example = next(iter(train_loader))[0].to(device)
+
+    was_training = model.training  
+    model.eval()                  
+
+    fa = FlopCountAnalysis(model, X_example)
+    profile.flops_by_module = dict(fa.by_module())
+
+    if was_training:
+        model.train()
+
+    print("FLOPs by module:", profile.flops_by_module)
+
+
+    # ----  CUPTI start -----
+    setup_cupti()
+
+    # ---- Training Loop ----
+    accuracy_epoch_train = []
+    accuracy_epoch_valid = []
+
+    start_time = my_timer()
+
+    for epoch in range(1, epoch_count + 1):
+        train_acc = train_one_epoch(
+            model, train_loader, optimizer, loss_fn, device, max_batches=batch_no_count
+        )
+        accuracy_epoch_train.append(train_acc)
+
+        valid_acc = eval_one_epoch(model, test_loader, device)
+        accuracy_epoch_valid.append(valid_acc)
+
+        print(f"Epoch [{epoch}/{epoch_count}] | "
+              f"Train Acc: {train_acc:.4f} | Valid Acc: {valid_acc:.4f}")
+
+    total_ns = my_timer() - start_time
+    print(f"Training complete. Took {total_ns/1e9:.3f} s")
+
+    # ---- CUPTI 종료 + MEMCPY 타임라인 ----
+    finalize_cupti()
+    plot_memcpy_timeline(memcpy_info)
+
+
+
+
+if __name__ == "__main__":
+    main()
