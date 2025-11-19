@@ -16,6 +16,7 @@ from cupti import cupti
 import numpy as np
 
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 
 from fvcore.nn import FlopCountAnalysis
 
@@ -49,6 +50,7 @@ class ExtractModel:
     self.layers = {}
     self.flops_by_module = {} 
     self.tracking = [] # per batch  
+    self.timeline = []
 
   def benchmark_ns(self, func, *args):
     """
@@ -56,7 +58,8 @@ class ExtractModel:
     """
     start_time = my_timer()
     ret = func(*args)
-    time_elapsed = my_timer() - start_time
+    end_time = my_timer()
+    time_elapsed = end_time - start_time
     
     name = getattr(func, "_prof_name", func.__class__.__name__)
 
@@ -68,8 +71,10 @@ class ExtractModel:
             }
 
     self.layers[name]["time_ns"].append(time_elapsed)
-
     fl = self.layers[name]["flops"]
+    if fl and fl > 1e-10:
+        self.timeline.append((start_time, end_time, fl, name))
+
     if fl is not None and time_elapsed > 0:
         t_sec = time_elapsed * 1e-9
         thr = fl / t_sec  # FLOPs / sec
@@ -286,6 +291,77 @@ def plot_memcpy_timeline(memcpy_info: MemoryCopy):
     plt.tight_layout()
     plt.show()
 
+def plot_throughput_timeline(profile_out):
+    timeline = profile_out.timeline
+    timeline = sorted(timeline, key=lambda x: x[0])
+
+    t0 = timeline[0][0]
+    events = []
+    for start, end, flops, layer in timeline:
+        start -= t0
+        end   -= t0
+        dur = end - start
+        thr = flops / dur if flops and dur > 0 else 0
+        events.append((start, dur, thr, layer))
+
+    # collect layers in order of first appearance
+    layers = []
+    for _, _, _, layer in events:
+        if layer not in layers:
+            layers.append(layer)
+
+    # map each layer -> y position
+
+    # color palette
+    cmap = plt.get_cmap("tab20")
+    colors = {layer: cmap(i % 20) for i, layer in enumerate(layers)}
+
+    max_thr = max(thr for _, _, thr, _ in events)   # highest throughput
+    labeloffset_y = max_thr * 0.05                        # row above all bars
+
+    # create plot
+    plt.figure(figsize=(14, 6))
+
+    # draw horizontal bars
+    for idx, (start, dur, thr, layer) in enumerate(events):
+        # note that y is actually the center of the bar so we get the center of it
+        plt.barh(
+            y=thr/2,
+            width=dur,
+            left=start,
+            height=thr,
+            color=colors[layer],
+            edgecolor='black',
+            alpha=0.9
+        )
+
+        cx = start + dur / 2  # center X position of the bar
+        plt.text(
+            cx,
+            thr + labeloffset_y,
+            str(idx),
+            ha='center',
+            va='bottom',
+            fontsize=8
+        )
+
+    # label axes
+    plt.xlabel("Time (seconds)")
+    plt.ylabel("throughput (FLOPs)")
+    plt.title("Model Execution Timeline (Throughput by Block)")
+    plt.grid(axis="x", linestyle="--", alpha=0.4)
+    plt.autoscale(enable=True)
+
+    legend_items = [
+        Patch(facecolor=colors[layer], label=f'({idx}){layer}')
+        for idx, layer in enumerate(layers)
+    ]
+
+    plt.legend(handles=legend_items, title="Layers", bbox_to_anchor=(1.05, 1), loc="upper left")
+
+    plt.tight_layout()
+    plt.show()
+
 # ==============================
 # dataloader util
 # ==============================
@@ -357,7 +433,7 @@ def eval_one_epoch(model, test_loader, device):
 def main():
     batch_size = 64
     epoch_count = 1
-    batch_no_count = 2
+    batch_no_count = 1
 
     if not torch.cuda.is_available():
         print('warning, cuda is not available! Using cpu instead')
@@ -414,7 +490,8 @@ def main():
 
     # ---- CUPTI 종료 + MEMCPY 타임라인 ----
     finalize_cupti()
-    plot_memcpy_timeline(memcpy_info)
+    #plot_memcpy_timeline(memcpy_info)
+    plot_throughput_timeline(profile)
 
 
 
