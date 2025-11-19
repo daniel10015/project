@@ -1,5 +1,5 @@
 from torch import nn
-from time import perf_counter_ns
+from time import perf_counter_ns, time_ns
 
 # -------------------------------------
 # custom implementation of resnet 18
@@ -51,13 +51,18 @@ class ExtractModel:
     self.flops_by_module = {} 
     self.tracking = [] # per batch  
     self.timeline = []
+    self.base_time = 0
 
   def benchmark_ns(self, func, *args):
     """
-    Assumes function is blocking, so when the function returns the execution is finished.
+    synchronizes torch.cuda
     """
+    torch.cuda.synchronize()
+    if self.base_time == 0:
+        self.base_time = time_ns()
     start_time = my_timer()
     ret = func(*args)
+    torch.cuda.synchronize()
     end_time = my_timer()
     time_elapsed = end_time - start_time
     
@@ -74,17 +79,18 @@ class ExtractModel:
     fl = self.layers[name]["flops"]
     if fl and fl > 1e-10:
         self.timeline.append((start_time, end_time, fl, name))
-
-    if fl is not None and time_elapsed > 0:
-        t_sec = time_elapsed * 1e-9
-        thr = fl / t_sec  # FLOPs / sec
-        self.layers[name]["throughput"].append(thr)
-        print(
-            f'layer {name}: time={time_elapsed/1e6:.3f} ms, '
-            f'FLOPs={fl}, throughput={thr/1e12:.3f} TFLOPs'
-        )
-    else:
-        print(f'layer {name}: time={time_elapsed/1e6:.3f} ms (no FLOPs info)')
+    do_print = False
+    if do_print:
+        if fl is not None and time_elapsed > 0:
+            t_sec = time_elapsed * 1e-9
+            thr = fl / t_sec  # FLOPs / sec
+            self.layers[name]["throughput"].append(thr)
+            print(
+                f'layer {name}: time={time_elapsed/1e6:.3f} ms, '
+                f'FLOPs={fl}, throughput={thr/1e12:.3f} TFLOPs'
+            )
+        else:
+            print(f'layer {name}: time={time_elapsed/1e6:.3f} ms (no FLOPs info)')
 
     return ret
 
@@ -339,7 +345,7 @@ def plot_throughput_timeline(profile_out):
         plt.text(
             cx,
             thr + labeloffset_y,
-            str(idx),
+            str(idx%len(layers)),
             ha='center',
             va='bottom',
             fontsize=8
@@ -359,6 +365,149 @@ def plot_throughput_timeline(profile_out):
 
     plt.legend(handles=legend_items, title="Layers", bbox_to_anchor=(1.05, 1), loc="upper left")
 
+    plt.tight_layout()
+    plt.show()
+
+def plot_combined(memcpy_info: MemoryCopy, profile_out):
+    # ----------------------------------------
+    # MEMORY COPY PREP
+    # ----------------------------------------
+    memcpy_info.memcpy_info.sort(key=lambda x: x[0])
+    times, sizes, kinds = zip(*memcpy_info.memcpy_info)
+
+    timeline = sorted(profile_out.timeline, key=lambda x: x[0])
+    t0 = timeline[0][0]
+
+    print(f'smallest memcpy time: {np.min(times)}, smallest throughput time: {profile_out.base_time}')
+    smallest = min(np.min(times), profile_out.base_time)
+
+    times = np.array(times)
+    times = times - smallest
+    times_scaled, time_units = scale_time_units(times_ns=times)
+
+    utilization = np.cumsum(np.array(sizes))
+
+    memcpy_colors = {
+        "Host -> Device": "tab:green",
+        "Device -> Host": "tab:blue",
+        "Other": "tab:gray"
+    }
+
+    # ----------------------------------------
+    # THROUGHPUT PREP
+    # ----------------------------------------
+    dif = 0 if abs(profile_out.base_time - smallest) < 1e-10 else profile_out.base_time - smallest
+
+    events = []
+    for start, end, flops, layer in timeline:
+        start = start - t0 + dif
+        end   = end - t0 + dif
+        dur = end - start
+        thr = flops / dur if (flops and dur > 0) else 0
+
+        # scale throughput for visibility
+        events.append((start, dur, thr, layer))
+
+    # layers in first appearance order
+    layers = []
+    for _, _, _, layer in events:
+        if layer not in layers:
+            layers.append(layer)
+
+    cmap = plt.get_cmap("tab20")
+    layer_colors = {layer: cmap(i % 20) for i, layer in enumerate(layers)}
+
+    # Convert event times to the same units as memory
+    def convert_to_units(ns):
+        return ns / (times[1] - times[0]) * (times_scaled[1] - times_scaled[0])
+
+    event_plot = []
+    for start, dur, thr, layer in events:
+        event_plot.append((
+            start * (times_scaled[-1] / times[-1]), 
+            dur   * (times_scaled[-1] / times[-1]),
+            thr,
+            layer
+        ))
+
+    # ----------------------------------------
+    # FIGURE SETUP
+    # ----------------------------------------
+    fig, ax1 = plt.subplots(figsize=(14, 7))
+
+    # MEMORY COPY PLOT (LEFT Y)
+    for kind_str in ["Host -> Device", "Device -> Host", "Other"]:
+        mask = np.array([
+            (MEMCPY_KIND_STR.get(k, "Other") == kind_str)
+            if k in MEMCPY_KIND_STR else False
+            for k in kinds
+        ])
+        if not np.any(mask):
+            continue
+
+        ax1.step(
+            times_scaled[mask],
+            utilization[mask],
+            where="post",
+            lw=2,
+            color=memcpy_colors[kind_str],
+            label=f"Memcpy: {kind_str}",
+        )
+
+    ax1.set_xlabel(f"Time ({time_units})")
+    ax1.set_ylabel("Memory Utilization (bytes)")
+    ax1.set_yscale("log")
+    ax1.grid(True, linestyle="--", alpha=0.4)
+
+    # ----------------------------------------
+    # THROUGHPUT PLOT (RIGHT Y)
+    # ----------------------------------------
+    ax2 = ax1.twinx()
+    ax2.set_ylabel("Throughput (FLOPs)")
+
+    max_thr = max(thr for _, _, thr, _ in event_plot)
+    label_offset_y = max_thr * 0.05
+
+    # Draw throughput blocks (rectangles)
+    for idx, (start, dur, thr, layer) in enumerate(event_plot):
+        ax2.barh(
+            y=thr / 2,
+            width=dur,
+            left=start,
+            height=thr,
+            color=layer_colors[layer],
+            edgecolor='black',
+            alpha=0.85
+        )
+
+        # index label
+        cx = start + dur / 2
+        ax2.text(
+            cx,
+            thr + label_offset_y,
+            str(idx%len(layers)),
+            ha='center',
+            va='bottom',
+            fontsize=8,
+            color='black'
+        )
+
+    ax2.set_ylim(bottom=0)
+
+    # ----------------------------------------
+    # LEGENDS
+    # ----------------------------------------
+    h1, l1 = ax1.get_legend_handles_labels()
+
+    layer_patches = [
+        Patch(facecolor=layer_colors[layer], label=f"({i}) {layer}")
+        for i, layer in enumerate(layers)
+    ]
+
+    ax1.legend(h1, l1, loc="upper left", title="Memory Copies")
+    ax2.legend(layer_patches, layers, loc="upper right", title="Layers")
+
+    plt.title("Memory Copy Timeline + Throughput Timeline (Combined)")
     plt.tight_layout()
     plt.show()
 
@@ -433,7 +582,7 @@ def eval_one_epoch(model, test_loader, device):
 def main():
     batch_size = 64
     epoch_count = 1
-    batch_no_count = 1
+    batch_no_count = 16
 
     if not torch.cuda.is_available():
         print('warning, cuda is not available! Using cpu instead')
@@ -488,10 +637,11 @@ def main():
     total_ns = my_timer() - start_time
     print(f"Training complete. Took {total_ns/1e9:.3f} s")
 
-    # ---- CUPTI 종료 + MEMCPY 타임라인 ----
+    # ---- plotting ----
     finalize_cupti()
     #plot_memcpy_timeline(memcpy_info)
     plot_throughput_timeline(profile)
+    plot_combined(memcpy_info, profile)
 
 
 
