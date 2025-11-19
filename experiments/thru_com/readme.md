@@ -1,6 +1,9 @@
 # Visualizing memcpy with throughput
 
-TODO
+Graphing memory copies with throughput
 
-## Memcpy graph
-![alt text](../../images/experiments_memcpy_graph.png)
+## Device = 1
+![alt text](../../images/memcpy_thru_1-device.png)
+
+## Device = ?
+TODO

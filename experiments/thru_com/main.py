@@ -358,7 +358,7 @@ def plot_throughput_timeline(profile_out):
 
     # label axes
     plt.xlabel("Time (seconds)")
-    plt.ylabel("throughput (FLOPs)")
+    plt.ylabel("throughput (GFLOPs)")
     plt.title("Model Execution Timeline (Throughput by Block)")
     plt.grid(axis="x", linestyle="--", alpha=0.4)
     plt.autoscale(enable=True)
@@ -468,7 +468,7 @@ def plot_combined(memcpy_info: MemoryCopy, profile_out):
     # THROUGHPUT PLOT (RIGHT Y)
     # ----------------------------------------
     ax2 = ax1.twinx()
-    ax2.set_ylabel("Throughput (FLOPs)")
+    ax2.set_ylabel("Throughput (GFLOPs)")
 
     max_thr = max(thr for _, _, thr, _ in event_plot)
     label_offset_y = max_thr * 0.05
