@@ -22,6 +22,9 @@ from fvcore.nn import FlopCountAnalysis
 
 # set whatever time you want to use here
 my_timer = perf_counter_ns
+PINNED_MEMORY = True
+PREFETCH_FACTOR = 3
+DO_CUDA_SYNC = False
 
 # ------------
 # utils
@@ -57,12 +60,14 @@ class ExtractModel:
     """
     synchronizes torch.cuda
     """
-    torch.cuda.synchronize()
+    if DO_CUDA_SYNC:
+        torch.cuda.synchronize()
     if self.base_time == 0:
         self.base_time = time_ns()
     start_time = my_timer()
     ret = func(*args)
-    torch.cuda.synchronize()
+    if DO_CUDA_SYNC:
+        torch.cuda.synchronize()
     end_time = my_timer()
     time_elapsed = end_time - start_time
     
@@ -528,7 +533,12 @@ def get_dataloaders(batch_size: int = 64):
     test_data = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
 
     # load data
-    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=2)
+    train_loader = DataLoader(train_data, 
+                              batch_size=batch_size, 
+                              shuffle=True, 
+                              num_workers=2, 
+                              pin_memory=PINNED_MEMORY, 
+                              prefetch_factor=PREFETCH_FACTOR)
     test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False, num_workers=2)
 
     print("Number of train batches:", len(train_loader))
@@ -544,6 +554,10 @@ def train_one_epoch(model, train_loader, optimizer, loss_fn, device, max_batches
     correct = 0
     total = 0
 
+    # for only k times get the data to keep gpu throughput high
+    k = 3
+    target_indices = [np.floor(j * (max_batches-1)/(k-1)) for j in range(k)] if max_batches else None
+
     for i, (data, label) in enumerate(train_loader):
         if max_batches is not None and i >= max_batches:
             break
@@ -551,19 +565,19 @@ def train_one_epoch(model, train_loader, optimizer, loss_fn, device, max_batches
         data, label = data.to(device), label.to(device)
         optimizer.zero_grad()
         pred = model(data)
-        print("==============================================")
         val = loss_fn(pred, label)
         val.backward()
         optimizer.step()
 
-        preds = torch.argmax(pred, dim=1)
-        correct += (preds == label).sum().item()
-        total += label.size(0)
+        if max_batches and i in target_indices: 
+            preds = torch.argmax(pred, dim=1)
+            correct += (preds == label).sum().item()
+            total += label.size(0)
 
     return correct / total
 
 def eval_one_epoch(model, test_loader, device):
-    model.train(False)
+    model.train(True)
     correct, total = 0, 0
     with torch.no_grad():
         for data, label in test_loader:
@@ -628,11 +642,11 @@ def main():
         )
         accuracy_epoch_train.append(train_acc)
 
-        valid_acc = eval_one_epoch(model, test_loader, device)
-        accuracy_epoch_valid.append(valid_acc)
-
-        print(f"Epoch [{epoch}/{epoch_count}] | "
-              f"Train Acc: {train_acc:.4f} | Valid Acc: {valid_acc:.4f}")
+        #valid_acc = eval_one_epoch(model, test_loader, device)
+        #accuracy_epoch_valid.append(valid_acc)
+#
+        #print(f"Epoch [{epoch}/{epoch_count}] | "
+        #      f"Train Acc: {train_acc:.4f} | Valid Acc: {valid_acc:.4f}")
 
     total_ns = my_timer() - start_time
     print(f"Training complete. Took {total_ns/1e9:.3f} s")
@@ -640,7 +654,7 @@ def main():
     # ---- plotting ----
     finalize_cupti()
     #plot_memcpy_timeline(memcpy_info)
-    plot_throughput_timeline(profile)
+    #plot_throughput_timeline(profile)
     plot_combined(memcpy_info, profile)
 
 
