@@ -1,4 +1,10 @@
 from cupti import cupti
+from enum import Enum, auto
+
+class Metric(Enum):
+    MEMORY = auto()
+    MEMCPY = auto()
+    DURATION = auto()
 
 # maps metric type to string meaning
 MEMCPY_KIND_STR = {
@@ -16,14 +22,18 @@ MEMCPY_KIND_STR = {
     2147483647: "FORCE_INT"
 }
 
+# thin wrapper around dictionary call, maybe more readable
+def is_metric_cupti(metric: Metric) -> bool:
+    return True if METRIC_TO_CUPTI.get(metric) != None else False
+
 # TODO: replace strings with enum so they're caught by linters better?
 # or maybe just always use cupti.activitykind?
 METRIC_TO_CUPTI = {
-  'MEMCPY':cupti.ActivityKind.MEMCPY,
-  'MEMORY':cupti.ActivityKind.MEMORY2,
+  Metric.MEMCPY:cupti.ActivityKind.MEMCPY,
+  Metric.MEMORY:cupti.ActivityKind.MEMORY2,
 }
 
 CUPTI_TO_METRIC = {
-  cupti.ActivityKind.MEMCPY:'MEMCPY',
-  cupti.ActivityKind.MEMORY2:'MEMORY',
+  cupti.ActivityKind.MEMCPY:Metric.MEMCPY,
+  cupti.ActivityKind.MEMORY2:Metric.MEMORY,
 }

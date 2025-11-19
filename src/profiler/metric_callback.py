@@ -4,9 +4,9 @@ from cupti import cupti
 import matplotlib.pyplot as plt
 import numpy as np
 
-debug = False
+debug = True
 
-class metric_callback:
+class metric_collection:
 
   def memcpy(self, activity) -> str:
     if debug:
@@ -105,19 +105,31 @@ class metric_callback:
   def __init__(self, start_time_s: float):
     self.start_time_s = start_time_s
     self.router = {
-      'MEMCPY': self.memcpy,
-      'MEMORY': self.memory,
+      metric_info.Metric.MEMCPY: self.memcpy,
+      metric_info.Metric.MEMORY: self.memory,
     }
     self.renders = {
-      'MEMORY': self.render_memory,
-      'MEMCPY': self.render_memcpy,
+      metric_info.Metric.MEMORY: self.render_memory,
+      metric_info.Metric.MEMCPY: self.render_memcpy,
     }
+
+    self.cupti_enabled = set()
 
     self.memory_info = {}
     self.memcpy_info = []
 
-  def render_type(self, metric_type: str):
+  def render_type(self, metric_type: metric_info.Metric):
      self.renders[metric_type]()
 
   def route(self, activity):
+    print(f'kind {activity.kind} res {self.router.get(metric_info.CUPTI_TO_METRIC[activity.kind])(activity)}')
     return self.router.get(metric_info.CUPTI_TO_METRIC[activity.kind])(activity)
+  
+  def enable(self, metric):
+     if metric_info.is_metric_cupti(metric) and not metric in self.cupti_enabled:
+      self.cupti_enabled.add(metric)
+      cupti.activity_enable(metric_info.METRIC_TO_CUPTI[metric])
+  def disable(self, metric):
+     if metric_info.is_metric_cupti(metric) and metric in self.cupti_enabled:
+      self.cupti_enabled.remove(metric)
+      cupti.activity_disable(metric_info.METRIC_TO_CUPTI[metric])

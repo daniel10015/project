@@ -1,6 +1,6 @@
 from torch import nn
+from profiler import profiler, metric_info
 import torch
-from profiler.profiler import profiler
 from profiler.util import *
 
 class CNN(nn.Module):
@@ -64,9 +64,9 @@ def do_something():
       optimizer.step()
 
 def do_profile():
-  profile = profiler(do_something, ('MEMCPY',))
+  profile = profiler.profiler(do_something, (metric_info.Metric.MEMORY,))
   profile()
-  profile.visualize()
+  profile.visualize(())
 
 def do_torchprofile():
   with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CUDA],profile_memory=True) as prof:

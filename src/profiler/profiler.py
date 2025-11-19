@@ -1,18 +1,12 @@
 
-from time import perf_counter, perf_counter_ns, time
-from enum import Enum, unique, auto
+from enum import Enum
 from cupti import cupti
-from .metric_callback import metric_callback
-from . import metric_info
+from .metric_callback import metric_collection
+from .metric_info import *
 
-"""
-#A wrapper class for train/test loops defined as functions.
-@unique
-class Metric(Enum):
-    CPU_TIME_TOTAL = auto()
-    CPU_MEM_COPY = auto()
-    GPU_MEM_COPY = auto()
-"""
+# should just always be true but maybe one day it won't be true? I guess if switching out of nvda hw
+def is_cupti_required(metrics: tuple[Metric, ...]):
+    return True
 
 class profiler():
     
@@ -23,43 +17,51 @@ class profiler():
 
     def cupti_func_buffer_completed(self, activities: list):
         for activity in activities:
-            metric_name = metric_info.CUPTI_TO_METRIC[activity.kind]
-            self.profile_out[metric_name].append(self.metric_callback.route(activity))
+            metric_name = CUPTI_TO_METRIC[activity.kind]
+            self.profile_out[metric_name].append(self.metric_collection.route(activity))
 
-    def __init__(self, fn, metrics: tuple[str, ...]):
+    def __init__(self, fn, metrics: tuple[Metric, ...]):
         assert callable(fn), f"{fn.__name__} is not callable"
         self.fn = fn
         self.metrics = metrics
-        self.profile_out = {metric: [] for metric in metrics}
-        self.metric_callback = metric_callback(start_time_s=0)
+        self.profile_out = {metric: [] for metric in metrics} # str representation
+        self.metric_collection = metric_collection(start_time_s=0)
         
         # TODO: Context?
 
         # enable cupti activities based on metrics
-        cupti.activity_register_callbacks(self.cupti_func_buffer_requested, self.cupti_func_buffer_completed)
+        if is_cupti_required(metrics):
+            self.cupti_enabled = True
+            cupti.activity_register_callbacks(self.cupti_func_buffer_requested, self.cupti_func_buffer_completed)
+        else:
+            self.cupti_enabled = False
         
     def __call__(self, *args):
         """
         start profiling here
         """
         for metric in self.metrics:
-            cupti.activity_enable(metric_info.METRIC_TO_CUPTI[metric])
+            print(f'enabling {metric}')
+            self.metric_collection.enable(metric)
         ret = self.fn(*args)
-        cupti.activity_flush_all(1)
+        
+        if self.cupti_enabled:
+            cupti.activity_flush_all(1)
         for metric in self.metrics:
-            cupti.activity_disable(metric_info.METRIC_TO_CUPTI[metric])
+            self.metric_collection.disable(metric)
         return ret
 
-    def visualize(self, metric_types: tuple[str,...] = None):
+    def visualize(self, metric_types: tuple[Metric,...]):
         """
         Pass in the metrics you want to visualize.
 
         Or, if nothing gets passed in, visualize on all the metrics you processed
         """
-        if metric_types == None:
+        if len(metric_types) == 0:
             metric_types = self.metrics
+        print(f'metric type: {metric_types}')
         for metric_type in metric_types:
-            self.metric_callback.render_type(metric_type)
+            self.metric_collection.render_type(metric_type)
 
     def spill(self):
         return self.profile_out

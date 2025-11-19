@@ -55,25 +55,30 @@ def trace_calls(frame, event, arg):
         full_name = f"{class_name}.{func_name}" if class_name else func_name
 
         call_info = {"name": full_name, "frame": frame, "id": id(frame)}
+        if not call_stack:
+           call_stack = []
         call_stack.append(call_info)
 
-        print(f"-> [PUSH]: (ID: {call_info['id']}) '{full_name}' called {frame.f_code.co_filename}:{frame.f_lineno}")
+        #print(f"-> [PUSH]: (ID: {call_info['id']}) '{full_name}' called {frame.f_code.co_filename}:{frame.f_lineno}")
         
     elif event == "return":
         func_name = frame.f_code.co_name
         if call_stack:
             popped_call = call_stack.pop()
-            print(f"<- [POP]: (ID: {popped_call['id']}) '{popped_call['name']}'")
-        else:
-            print(f"<- [POP]: empty stack '{func_name}'")
+            #print(f"<- [POP]: (ID: {popped_call['id']}) '{popped_call['name']}'")
+        #else:
+            #print(f"<- [POP]: empty stack '{func_name}'")
             
     return trace_calls
 import sys
+from time import time
 sys.settrace(trace_calls)
 
 model = MyModel()
 model.to(device)
-X = torch.randn(28, 28).flatten().to(device) # Batch size 1, 1 channels, 28x28 image
+batch_size = 32
+X = torch.randn(batch_size, 28, 28, device=device)  # <batch_size> images of 28x28
+X = X.view(batch_size, -1)  # flatten image
 flops = FlopCountAnalysis(model, X) # does a static analysis of FLOPs
 print('it appears since these are just approximiations, layers like relu are negligible so they are 0')
 
@@ -104,8 +109,10 @@ def func_buffer_completed(activities: list):
 #Step 2: Enable CUPTI Activity Collection
 #cupti.activity_enable(cupti.ActivityKind.CONCURRENT_KERNEL)
 
-model(X)
-
+start = time()
+for i in range(128):
+  model(X)
+print(time()-start)
 #Step 3: Flushing and Disabling CUPTI Activity
 #cupti.activity_flush_all(1)
 #cupti.activity_disable(cupti.ActivityKind.CONCURRENT_KERNEL)

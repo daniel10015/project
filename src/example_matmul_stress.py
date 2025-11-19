@@ -37,10 +37,11 @@ def func(num_iters, size_range):
       print(f"[{i:04d}] GPU allocated: {b_to_mb(torch.cuda.memory_allocated()):.1f} MB")
 
 from profiler.profiler import profiler
+from profiler.metric_info import Metric
 
-profile = profiler(fn=func, metrics=('MEMORY',))
+profile = profiler(fn=func, metrics=(Metric.MEMORY,))
 start = time.time()
 profile(num_iters, size_range)
 total_time = time.time() - start
 print(f'profiling function took: {1000*total_time}ms')
-profile.visualize()
+profile.visualize(())
