@@ -66,13 +66,12 @@ class ExtractModel:
         self.base_time = time_ns()
     start.record()
     start_time = my_timer()
+    
     ret = func(*args)
     end.record()
     torch.cuda.synchronize()
     end_time = int(1e6*start.elapsed_time(end)) + start_time
     time_elapsed = end_time - start_time
-    #print(f'cuda elapsed time: {1e6*start.elapsed_time(end)}')
-    #print(f'timing elapsed time: {time_elapsed}')
     
     name = getattr(func, "_prof_name", func.__class__.__name__)
 
