@@ -20,9 +20,9 @@ If not, change the .sh script accordingly.
     - NOTE: Only use pip when an environment is active
    Use pip to install packages. <br>
    To install PyTorch: <br>
-    `pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu130`
+    `pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu130` <br>
     To install CUPTI Python: <br>
-    `pip install cupti-python==13.0.0`
+    `pip install cupti-python==13.0.0` <br>
 4. Verify your setup
    Try running the CIFAR example: <br>
    `sbatch slurm_train_cifar.sh`
