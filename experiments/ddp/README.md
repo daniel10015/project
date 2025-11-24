@@ -5,22 +5,32 @@
 Your environment name on Sol should be "cu13cupti".
 If not, change the .sh script accordingly.
 
-## Installation on SOL
-0. Start env interactive and load mamba latest:
-
-    `interactive -p htc -c 4 -t 30`
-
+## Setup on SOL
+0. Log into Sol (shell), then load up mamba:
     `module load mamba/latest`
 
-1. Create environment
+1. Create an environment
+    `mamba create -n cu13cupti -c conda-forge python=3`
 
-    `mamba create -n py39cupti -c conda-forge python=3.9`
-
-2. Activate environment
-
-    `source activate py39cupti` 
-    - NOTE: You should see `(py39cupti)` to the left of your directory
+2. Activate your environment
+    `source activate cu13cupti` 
+    - NOTE: You should see `(cu13cupti)` to the left of your directory
 
 3. Install dependencies
+    - NOTE: Only use pip when an environment is active
+   Use pip to install packages. For example, to install PyTorch:
+    `pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu130`
 
-    `python3.9 -m pip install cupti-python==13.0.0 torch==2.8.0 torchvision==0.23.0`
+4. Verify your setup
+   Try running the CIFAR example:
+   `sbatch slurm_train_cifar.sh`
+   It should output something like:
+   ```
+   (cu13_testenv) [zyin36@sol-login02:~]$ sbatch slurm_train_cifar.sh
+    sbatch: Default partition applied: htc
+    sbatch: Default min_mem_per_node applied for GPU: 24000.0 MB
+    Submitted batch job <job_id> 
+   ```
+   Go to your Sol Dashboard, under Jobs > Active jobs, you should see your job entry with the same job id.
+   Once it's completed, check your output in Sol shell by running:
+   `cat slurm-<job_id>`
