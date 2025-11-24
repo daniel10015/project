@@ -18,7 +18,7 @@ If not, change the .sh script accordingly.
 
 3. Install dependencies
     - NOTE: Only use pip when an environment is active
-   Use pip to install packages. For example, to install PyTorch:
+   Use pip to install packages. For example, to install PyTorch: \\
     `pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu130`
 
 4. Verify your setup
