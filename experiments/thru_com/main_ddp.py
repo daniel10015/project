@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from time import perf_counter_ns
 from torch.optim.lr_scheduler import StepLR
-from torchvision.datasets import CIFAR10 as datasets  # updated
+from torchvision.datasets import CIFAR10 
 from torchvision import transforms  # updated
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader
@@ -246,8 +246,8 @@ def get_dataloaders_for_ddp(batch_size: int = 64):
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
     batch_size = 64
-    train_data = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
-    test_data = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
+    train_data = CIFAR10(root='./', train=True, download=True, transform=transform)
+    test_data = CIFAR10(root='./', train=False, download=True, transform=transform)
     train_sampler = DistributedSampler(train_data, shuffle=True)
     train_loader = DataLoader(
         train_data, 

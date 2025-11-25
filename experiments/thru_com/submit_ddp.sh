@@ -8,30 +8,25 @@
 #SBATCH --gres=gpu:2                # 노드당 GPU 2개 요청 (DDP를 위해 2개 사용)
 #SBATCH --cpus-per-task=10          # 노드당 CPU 코어 요청 (데이터 로딩 num_workers=2에 충분)
 #SBATCH --time=5  
-#SBATCH --export=ALL                  
-
 
 
 # Activate the environment
 
-#module load mamba/latest
-#source activate cu13cupti
+module load mamba/latest
+source activate cu13cupti
 
-#mamba install pytorch torchvision -c pytorch -c nvidia
-
-PYTHON="$HOME/.conda/envs/cu13cupti/bin/python"
 
 export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
 export MASTER_PORT=16961
 export WORLD_SIZE=$(($SLURM_NNODES * $SLURM_NTASKS_PER_NODE))
 
 #export WORLD_SIZE= 2
-echo "WORLD_SIZE"=$WORLD_SIZE
-echo "MASTER_ADDR="$MASTER_ADDR
+echo "WORLD_SIZE=$WORLD_SIZE"
+echo "MASTER_ADDR=$MASTER_ADDR"
 echo "Starting DDP training on MASTER_ADDR: $MASTER_ADDR"
 
-# master_addr=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
-# export MASTER_ADDR=$master_addr
+master_addr=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
+export MASTER_ADDR=$master_addr
 
 
-srun $PYTHON main_ddp.py
+srun python main_ddp.py
