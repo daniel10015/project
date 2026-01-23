@@ -157,17 +157,18 @@ class ResidualBlock(nn.Module):
 class SmallResidualNetwork(nn.Module):
     def __init__(self, num_classes=10):
         super().__init__()
-        self.conv1 = nn.Conv2d(3, 8, kernel_size=7, stride=1, padding=3)
-        self.bn1 = nn.BatchNorm2d(8)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=1, padding=3)
+        self.bn1 = nn.BatchNorm2d(64)
         self.relu1 = nn.ReLU(inplace=True)
         self.pool1 = nn.MaxPool2d(3, stride=2)
 
-        self.block1 = ResidualBlock(8, 16, stride=2, do_1x1=True, block_name="block1")
-        self.block2 = ResidualBlock(16, 32, stride=2, do_1x1=True, block_name="block2")
-        self.block3 = ResidualBlock(32, 64, stride=1, do_1x1=True, block_name="block3")
+        self.block1 = ResidualBlock(64,  128, stride=2, do_1x1=True, block_name="block1")
+        self.block2 = ResidualBlock(128, 256, stride=2, do_1x1=True, block_name="block2")
+        self.block3 = ResidualBlock(256, 512, stride=1, do_1x1=True, block_name="block3")
+        self.block4 = ResidualBlock(512, 512, stride=1, do_1x1=True, block_name="block4")
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))  # safer than fixed 8x8
-        self.fc = nn.Linear(64, num_classes)
+        self.fc = nn.Linear(512, num_classes)
 
         self.conv1._prof_name  = "conv1"
         self.bn1._prof_name    = "bn1"
@@ -529,7 +530,6 @@ def get_dataloaders(batch_size: int = 64):
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
 
-    batch_size = 64
     # download data with transformations
     train_data = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
     test_data = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
@@ -596,7 +596,7 @@ def eval_one_epoch(model, test_loader, device):
 # main funciton
 # ==============================
 def main():
-    batch_size = 64
+    batch_size = 512
     epoch_count = 1
     batch_no_count = 16
 
