@@ -60,17 +60,11 @@ class ExtractModel:
     """
     synchronizes torch.cuda
     """
-    start = torch.cuda.Event(enable_timing=True)
-    end = torch.cuda.Event(enable_timing=True)
     if self.base_time == 0:
         self.base_time = time_ns()
-    start.record()
     start_time = my_timer()
-    
     ret = func(*args)
-    end.record()
-    torch.cuda.synchronize()
-    end_time = int(1e6*start.elapsed_time(end)) + start_time
+    end_time = my_timer()
     time_elapsed = end_time - start_time
     
     name = getattr(func, "_prof_name", func.__class__.__name__)
@@ -637,6 +631,7 @@ def main():
     accuracy_epoch_valid = []
 
     start_time = my_timer()
+    model = torch.compile(model)
 
     for epoch in range(1, epoch_count + 1):
         train_acc = train_one_epoch(
