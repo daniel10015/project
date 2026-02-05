@@ -11,9 +11,14 @@
 
 
 # Activate the environment
-
+K=1
+if [ "$#" -ne "$K" ]; then
+    echo "Please pass in mamba env name"
+    exit 1
+fi
+echo "Proceeding with $1 as env..."
 module load mamba/latest
-source activate cu13cupti
+source activate $1
 
 
 export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)

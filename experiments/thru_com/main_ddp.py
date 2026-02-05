@@ -265,48 +265,40 @@ MEMCPY_KIND_STR = {
     10: "Peer -> Peer",
     2147483647: "FORCE_INT"
 }
-"""
-class MemoryCopy:
-    def __init__(self):
-        self.memcpy_info = []
-  
-    def memcpy(self, activity) -> str:
-        if debug:
-            print(f'activity at ({activity.start}) copies {activity.bytes} bytes for {activity.end-activity.start}ns')
-        # record start and end of memcpy with positive/negative bytes
-        self.memcpy_info.append((activity.start, activity.bytes, activity.copy_kind, activity.device_id))
-        self.memcpy_info.append((activity.end, -activity.bytes, activity.copy_kind, activity.device_id))
 
-memcpy_info = MemoryCopy()
-"""
-
+memcpy_info = []
+kernel_info = []
 def func_buffer_requested():
     buffer_size = 8 * 1024 * 1024  # 8MB buffer
     max_num_records = 0
     return buffer_size, max_num_records
 
-memcpy_info = []
 def func_buffer_completed(activities: list):
     for activity in activities:
         # Only handle MEMCPY activities
         # if activity.kind == cupti.ActivityKind.MEMCPY:
         #    memcpy_info.memcpy(activity)
-            
-        memcpy_info.append((activity.start, activity.bytes, activity.copy_kind))
-        memcpy_info.append((activity.end, -activity.bytes, activity.copy_kind))
-
-
+        if activity.kind == cupti.ActivityKind.MEMCPY: 
+            memcpy_info.append((activity.start, activity.bytes, activity.copy_kind))
+            memcpy_info.append((activity.end, -activity.bytes, activity.copy_kind))
+        elif activity.kind == cupti.ActivityKind.CONCURRENT_KERNEL:
+            duration = activity.end - activity.start
+            kernel_info.append((activity.name, duration))
 def setup_cupti():
     # Start data collection right before the training loop
     cupti.activity_register_callbacks(func_buffer_requested, func_buffer_completed)
     cupti.activity_enable(cupti.ActivityKind.MEMCPY)
-
+    cupti.activity_enable(cupti.ActivityKind.CONCURRENT_KERNEL)
+    
 def finalize_cupti(rank: int):
     cupti.activity_flush_all(1)
     cupti.activity_disable(cupti.ActivityKind.MEMCPY)
-
+    cupti.activity_disable(cupti.ActivityKind.CONCURRENT_KERNEL)
     with open(f"memcpy_data_rank_{rank}.csv", "w") as f:
         data = "\n".join([f"{time},{b},{kind}" for time, b, kind in memcpy_info])
+        f.write(data)
+    with open(f'kernel_duration_rank_{rank}.csv', 'w') as f:
+        data = '\n'.join(['kernel_name', 'duration(ns)'] + [f'{name},{duration}' for name, duration in kernel_info])
         f.write(data)
 
 
@@ -644,27 +636,6 @@ def main():
     # ---- CUPTI end ------
     # 6. Each rank saves its own data to file
     finalize_cupti(rank)
-    
-    '''
-    # 7. Rank 0 gathers and prints data
-    if rank == 0:
-        all_data = []
-        for i in range(world_size): 
-            try:
-                #  Update: use world_size to load files from all ranks
-                with open(f"memcpy_data_rank_{i}.pkl", "rb") as f:
-                    all_data.extend(pickle.load(f))
-                # os.remove(f"memcpy_data_rank_{i}.pkl")  # clean up files # fuck no
-            except FileNotFoundError:
-                print(f"Warning: Could not find memcpy data for Rank {i}")
-
-        combined_memcpy_info = MemoryCopy()
-        combined_memcpy_info.memcpy_info = all_data
-
-        print(f"Training complete. Took {total_ns/1e9:.3f} s")
-        # Call CUPTI plot here if needed
-    '''
-    # plot_memcpy_timeline(memcpy_info, f'memcpy_plot_rank_{rank}.png') 
     plot_combined(memcpy_info, profile)
 
     # 8. Destroy DDP process group
