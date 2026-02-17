@@ -1,3 +1,19 @@
-myenv
-.vscode
+# Python cache
+__pycache__/
 *.pyc
+
+# Nsight Systems outputs (often huge)
+*.qdrep
+*.nsys-rep
+*.sqlite
+*.sqlite3
+
+# Plots / generated images
+*.png
+*.pdf
+
+# Logs
+*.log
+
+# VSCode
+.vscode/
