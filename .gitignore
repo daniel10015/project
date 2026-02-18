@@ -17,3 +17,10 @@ __pycache__/
 
 # VSCode
 .vscode/
+
+# local outputs
+myenv
+.vscode
+*.pycnsys/
+experiments/ddp/
+experiments/thru_com/
