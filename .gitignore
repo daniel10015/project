@@ -24,4 +24,4 @@ myenv
 *.pycnsys/
 experiments/ddp/
 experiments/thru_com/
-nsys/
+
