@@ -1,0 +1,9 @@
+myenv
+.vscode
+*.pyc
+*.tar.gz
+./experiments/datasets
+**/datasets/
+out
+log/
+data/

@@ -1,0 +1,40 @@
+# Tutorial
+
+You can run the following 3 scripts to get their corresponding outputs or run `run_samples.sh` to run all three scripts sequentially.
+
+
+Run `verify_torch_version.py` and your output should look something like this:
+PyTorch version: 2.9.0+cu130
+Is CUDA available? True
+CUDA version PyTorch was compiled with: 13.0
+Current CUDA device: NVIDIA GeForce RTX 5070
+
+
+
+Run `sample_matmul.py` and your output should look something like this:
+```
+PyTorch version: 2.9.0+cu130
+CUPTI module loaded: cupti.cupti
+kernel name = _ZN2at6native54_GLOBAL__N__d8ceb000_21_DistributionNormal_cu_0c5b6e8543distribution_elementwise_grid_stride_kernelIfLi4EZNS0_9templates4cuda20normal_and_transformIffPNS_17CUDAGeneratorImplEZZZNS4_13normal_kernelIS7_EEvRKNS_10TensorBaseEddT_ENKUlvE_clEvENKUlvE0_clEvEUlfE_EEvRNS_18TensorIteratorBaseET1_T2_EUlP24curandStatePhilox4_32_10E0_ZNS1_27distribution_nullary_kernelIff6float4S7_SM_SF_EEvSH_SJ_RKT3_T4_EUlifE_EEvlNS_15PhiloxCudaStateESI_SJ_
+kernel duration (ns) = 7168
+kernel name = _ZN2at6native54_GLOBAL__N__d8ceb000_21_DistributionNormal_cu_0c5b6e8543distribution_elementwise_grid_stride_kernelIfLi4EZNS0_9templates4cuda20normal_and_transformIffPNS_17CUDAGeneratorImplEZZZNS4_13normal_kernelIS7_EEvRKNS_10TensorBaseEddT_ENKUlvE_clEvENKUlvE0_clEvEUlfE_EEvRNS_18TensorIteratorBaseET1_T2_EUlP24curandStatePhilox4_32_10E0_ZNS1_27distribution_nullary_kernelIff6float4S7_SM_SF_EEvSH_SJ_RKT3_T4_EUlifE_EEvlNS_15PhiloxCudaStateESI_SJ_
+kernel duration (ns) = 7264
+kernel name = _ZN7cutlass7Kernel2I42cutlass_80_simt_sgemm_128x64_8x5_nn_align1EEvNT_6ParamsE
+kernel duration (ns) = 108674
+Computation done, profiling captured.
+Result tensor shape: torch.Size([1024, 1024])
+```
+
+Errors related to driver versioning most likely means you'll need to downgrade CUPTI, or upgrade torch. In most cases it's preferable to downgrade to match the driver version, which you check by doing `nvcc --version`.
+
+You can also run `sample_model.py` which should output something similar to:
+```
+Memcpy Host -> Device of 1728 bytes on stream 7 duration (ns) = 1440
+Memcpy Host -> Device of 64 bytes on stream 7 duration (ns) = 352
+Memcpy Host -> Device of 18432 bytes on stream 7 duration (ns) = 1792
+Memcpy Host -> Device of 128 bytes on stream 7 duration (ns) = 352
+Memcpy Host -> Device of 1280 bytes on stream 7 duration (ns) = 864
+Memcpy Host -> Device of 40 bytes on stream 7 duration (ns) = 352
+----------Training complete----------
+loss: 2.2960925102233887
+```

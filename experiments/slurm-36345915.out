@@ -1,0 +1,29 @@
+
+=====================================================================
+This module is only for creating or activating Python environments:
+$ mamba create -n myenv -c conda-forge python=3 <package_name>
+$ source activate myenv
+
+Only run "pip install" after activating an environment.
+Running pip without activating an environment is known to cause issues.
+
+To list available environments:
+$ mamba info --envs
+
+Other uses are not tested. More info: https://links.asu.edu/solpy
+=====================================================================
+
+  
+CUDA_VISIBLE_DEVICES = 0,1
+WORLD_SIZE = 4
+[rank1]:[W1023 01:53:24.520391792 execution_trace_observer.cpp:1010] Enabling Execution Trace Observer
+[rank0]:[W1023 01:53:27.669236070 execution_trace_observer.cpp:1010] Enabling Execution Trace Observer
+[rank2]:[W1023 01:53:28.078095269 execution_trace_observer.cpp:1010] Enabling Execution Trace Observer
+[rank3]:[W1023 01:53:28.078853140 execution_trace_observer.cpp:1010] Enabling Execution Trace Observer
+(Rank 0, Local 0) cuda:0
+(Rank 1, Local 1) cuda:1
+(Rank 2, Local 0) cuda:0
+(Rank 3, Local 1) cuda:1
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+[2025-10-23T01:58:42.882] error: *** JOB 36345915 ON scg007 CANCELLED AT 2025-10-23T01:58:42 DUE TO TIME LIMIT ***
+[2025-10-23T01:58:42.882] error: *** STEP 36345915.0 ON scg007 CANCELLED AT 2025-10-23T01:58:42 DUE TO TIME LIMIT ***
