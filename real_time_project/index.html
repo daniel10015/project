@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPU Real-Time Monitoring Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; }
+        .status-board { display: flex; justify-content: space-around; margin-bottom: 20px; padding: 15px; background: #eef2f5; border-radius: 8px; }
+        .status-item { text-align: center; font-size: 1.2em; font-weight: bold; color: #2c3e50; }
+        .alert { color: #e74c3c; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🚀 Real-Time GPU Monitor</h1>
+    
+    <div class="status-board">
+        <div class="status-item">GPU Usage: <span id="gpu-text">0</span>%</div>
+        <div class="status-item">Memory: <span id="mem-text">0</span> MB</div>
+        <div class="status-item">Status: <span id="event-text">Waiting...</span></div>
+    </div>
+
+    <canvas id="gpuChart"></canvas>
+</div>
+
+<script>
+    // 1. Chart Initialization Settings
+    const ctx = document.getElementById('gpuChart').getContext('2d');
+    const gpuChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [], // X-axis (Time)
+            datasets: [{
+                label: 'GPU Utilization (%)',
+                data: [], // Y-axis (Usage Data)
+                borderColor: '#3498db',
+                backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3 // Smooth lines
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, max: 100 } // Fixed Y-axis 0~100%
+            },
+            animation: { duration: 0 } // Disabled for smoother real-time updates
+        }
+    });
+
+    // 2. WebSocket Connection
+    let protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+    let host = window.location.host;
+    let path = window.location.pathname;
+    
+    // Append trailing slash if missing
+    if (!path.endsWith('/')) {
+        path += '/';
+    }
+    
+    // Auto-complete final WebSocket URL
+    const wsUrl = protocol + host + path + "ws/monitor";
+    const ws = new WebSocket(wsUrl);
+
+    // 3. Data Handling from Server
+    ws.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        
+        // Update Text Board
+        document.getElementById('gpu-text').innerText = data.gpu_util;
+        document.getElementById('mem-text').innerText = data.mem_used.toFixed(0);
+        
+        const eventSpan = document.getElementById('event-text');
+        if (data.event === "BOTTLENECK_CANDIDATE") {
+            eventSpan.innerText = " Bottleneck Suspected (Low Usage)";
+            eventSpan.className = "alert";
+        } else {
+            eventSpan.innerText = "Healthy";
+            eventSpan.className = "";
+        }
+
+        // Update Graph Data
+        gpuChart.data.labels.push(data.datetime);
+        gpuChart.data.datasets[0].data.push(data.gpu_util);
+
+        // Keep last 60 data points (~30 seconds) for scrolling effect
+        if (gpuChart.data.labels.length > 60) {
+            gpuChart.data.labels.shift();
+            gpuChart.data.datasets[0].data.shift();
+        }
+
+        // Re-render Chart
+        gpuChart.update();
+    };
+
+    ws.onopen = function() { console.log("WebSocket connected successfully!"); };
+    ws.onerror = function(err) { console.error("WebSocket Error: Please check the connection address!", err); };
+</script>
+
+</body>
+</html>
