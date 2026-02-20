@@ -1,4 +1,3 @@
-Here is a clean, concise, and professional English version of your `README.md`.
 
 ```markdown
 # Real-Time GPU Monitor
