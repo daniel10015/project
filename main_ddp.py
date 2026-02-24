@@ -309,45 +309,9 @@ MEMCPY_KIND_STR = {
     10: "Peer -> Peer",
     2147483647: "FORCE_INT"
 }
-class MemoryCopy:
-    def __init__(self):
-        self.memcpy_info = []
-
-        
-  
-    def memcpy(self, activity) -> str:
-        if debug:
-            print(f'activity at ({activity.start}) copies {activity.bytes} bytes for {activity.end-activity.start}ns on device {activity.deviceI}')
-
-        
-        #GPU ID
-        dev_id = getattr(activity, "deviceId", None)
-        dev_id = activity.deviceId
-
-        # record start and end of memcpy with positive/negative bytes
-        self.memcpy_info.append((activity.start, activity.bytes, activity.copy_kind, dev_id))
-        self.memcpy_info.append((activity.end, -activity.bytes, activity.copy_kind, dev_id))
     
 
 
-#delcare Memory copy
-memcpy_info = MemoryCopy()
-
-def func_buffer_requested():
-    buffer_size = 8 * 1024 * 1024  # 8MB buffer
-    max_num_records = 0
-    return buffer_size, max_num_records
-
-def func_buffer_completed(activities: list):
-    for activity in activities:
-        # Only handle MEMCPY activities
-        if activity.kind == cupti.ActivityKind.MEMCPY:
-            memcpy_info.memcpy(activity)
-
-def setup_cupti():
-    # Start data collection right before the training loop
-    cupti.activity_register_callbacks(func_buffer_requested, func_buffer_completed)
-    cupti.activity_enable(cupti.ActivityKind.MEMCPY)
 
 #for debugging to make sure activity.deviceId represent each GPU
 # def cupti_memcpy_callback(activity):
@@ -359,59 +323,6 @@ def setup_cupti():
 #         "time =", activity.start, "→", activity.end,
 #     )
 #     memcpy_info.memcpy(activity)
-
-
-def finalize_cupti(rank: int):
-    cupti.activity_flush_all(1)
-    cupti.activity_disable(cupti.ActivityKind.MEMCPY)
-
-    # memcpy_info.memcpy_info: [(time, bytes, kind), ...]
-    json_ready_list = []
-
-    for event in memcpy_info.memcpy_info:
-        time_ns, size_bytes, kind = event
-
-        json_event = {
-            "time_ns": int(time_ns),
-            "bytes": int(size_bytes),
-            "kind": str(kind),
-            "device_id": int(dev_id) if dev_id is not None else None,
-        }
-        json_ready_list.append(json_event)
-
-    #making file.json
-    fname = f"memcpy_data_rank_{rank}.json"
-    with open(fname, "w") as f:
-        json.dump(json_ready_list, f, indent=2)
-
-    print(f"[Rank {rank}] saved memcpy JSON → {fname}")  
-
-#-------------------------------------------------
-#   visualization 
-#-------------------------------------------------
-def plot_memcpy_timeline_by_device(memcpy_info: MemoryCopy):
-
-    if not memcpy_info.memcpy_info:
-        print("No memcpy events recorded.")
-        return
-    #Sort the evernts by time
-    memcpy_info.memcpy_info.sort(key=lambda x: x[0])
-
-
-    # 
-    events_by_dev = {}
-    for time_ns, size_bytes, kind, dev_id in memcpy_info.memcpy_info:
-        events_by_dev.setdefault(dev_id, []).append((time_ns, size_bytes, kind))
-    
-    device_ids = sorted(events_by_dev.keys())
-    num_devices = len(device_ids)
-
-def plot_throughput_timeline_by_device(profile_layers,profile_timeline):
-
-
-
-
-def plot_combined_by_device(memcpy_info: MemoryCopy, profile_layers, profile_timeline):
 
 
 
@@ -446,24 +357,6 @@ def get_dataloaders_for_ddp(batch_size: int = 64):
     return train_loader, test_loader, train_sampler
 
 
-# ==============================
-# Training / Validation 
-# ==============================
-
-#Update: added max_batches argument and fixed local_rank typo
-def train_one_epoch(model, local_rank, train_loader, optimizer, loss_fn, max_batches=None):
-    model.train(True)
-
-    for i, (data, label) in enumerate(train_loader):
-        if max_batches is not None and i >= max_batches:
-            break
-        # Forward/Backward pass
-        data, label = data.to(local_rank), label.to(local_rank)
-        optimizer.zero_grad()
-        pred = model(data)
-        val = loss_fn(pred, label)
-        val.backward()
-        optimizer.step()
 
 # Update: removed rank argument (run function only needs local_rank)
 def run(num_epochs, local_rank, train_sampler, loader):
@@ -489,30 +382,8 @@ def run(num_epochs, local_rank, train_sampler, loader):
     scheduler = StepLR(optimizer, step_size=1, gamma=0.7)
     loss_fn = nn.CrossEntropyLoss()
 
-    #Calculate FLOPS once with first batch
-    X_example, _ = next(iter(loader)) # first batch
-    X_example = X_example.to(device)
-
-    was_training = ddp_model.training
-    ddp_model.eval()
-
-    #implement calculation for FLOPS
-    fa = FlopCountAnalysis(ddp_model.module, X_example)
-    profile.flops_by_module = dict(fa.by_module())
-
-    if was_training:
-        ddp_model.train()
-
-    if dist.get_rank() == 0:
-        print("FLOPs by module:", profile.flops_by_module)
-
-
-    for epoch in range(num_epochs):
-        #Update: use train_sampler instead of sampler
-        train_sampler.set_epoch(epoch)
-        # Call train_one_epoch
-        train_one_epoch(ddp_model, local_rank, loader, optimizer, loss_fn)
-        scheduler.step()
+ 
+ 
 
 def main():
 

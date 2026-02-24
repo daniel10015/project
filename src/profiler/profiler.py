@@ -2,6 +2,8 @@
 from time import perf_counter, perf_counter_ns, time
 from enum import Enum, unique, auto
 from cupti import cupti
+from torch import distributed as dist
+from torch.cuda import nvtx
 from .metric_callback import metric_callback
 from . import metric_info
 
@@ -13,6 +15,56 @@ class Metric(Enum):
     CPU_MEM_COPY = auto()
     GPU_MEM_COPY = auto()
 """
+
+class ProfiledModel():
+    def __init__(self, model, local_rank, global_rank): # metrics: tuple[str, ...]):
+        self.model = model
+        self.local_rank = local_rank
+        self.global_rank = global_rank
+        # self.profiler = profiler(model.forward, metrics)
+
+    
+    def train_epoch(self, loader, optimizer, loss_fn, *args):
+        self.model.train()
+        iterator = iter(loader)
+        num_batches = len(loader)
+        for i in range(num_batches):
+            nvtx.range_push(f"Batch_{i}")
+            with nvtx.range("data_wait"):
+                data, label = next(iterator)
+
+            with nvtx.range("h2d"):
+                data = data.to(self.local_rank, non_blocking=True)
+                label = label.to(self.local_rank, non_blocking=True)
+
+            with nvtx.range("gpu_compute"):
+                with nvtx.range("zero_grad"):
+                    optimizer.zero_grad()
+                with nvtx.range("forward"):
+                    pred = self.model(data)
+                with nvtx.range("loss"):
+                    loss = loss_fn(pred, label)
+                with nvtx.range("backward"):
+                    loss.backward()
+                with nvtx.range("opt_step"):
+                    optimizer.step()
+
+            with nvtx.range("nccl_sync"):
+                dist.barrier()
+
+            nvtx.range_pop(f"Batch_{i}")
+
+    # Inference
+    def inf_epoch(self, *args):
+        pass
+    
+    
+    def forward(self, *args):
+        return self.model(*args)
+
+    def __call__(self, *args):
+        return self.forward(*args)
+
 
 class profiler():
     
