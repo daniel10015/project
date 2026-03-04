@@ -1,0 +1,24 @@
+Starting training...
+Training Complete.
+Collecting data...
+Generating '/tmp/nsys-report-2ab0.qdstrm'
+Collecting data...
+Generating '/tmp/nsys-report-ef0c.qdstrm'
+[1/1] [0%                          ] profile_result_2774142.nsys-rep[1/1] [0%                          ] profile_result_2774142.nsys-rep[1/1] [5%                          ] profile_result_2774142.nsys-rep[1/1] [10%                         ] profile_result_2774142.nsys-rep[1/1] [11%                         ] profile_result_2774142.nsys-rep[1/1] [12%                         ] profile_result_2774142.nsys-rep[1/1] [13%                         ] profile_result_2774142.nsys-rep[1/1] [14%                         ] profile_result_2774142.nsys-rep[1/1] [=15%                        ] profile_result_2774142.nsys-rep[1/1] [=16%                        ] profile_result_2774142.nsys-rep[1/1] [=17%                        ] profile_result_2774142.nsys-rep[1/1] [==18%                       ] profile_result_2774142.nsys-rep[1/1] [==19%                       ] profile_result_2774142.nsys-rep[1/1] [==20%                       ] profile_result_2774142.nsys-rep[1/1] [=====================88%    ] profile_result_2774142.nsys-rep[1/1] [========================100%] profile_result_2774142.nsys-rep[1/1] [========================100%] profile_result_2774142.nsys-rep
+Generated:
+    /home/hson17/nsys/distributed/./profile_result_2774142.nsys-rep
+[1/1] [0%                          ] profile_result_2774145.nsys-rep[1/1] [0%                          ] profile_result_2774145.nsys-rep[1/1] [7%                          ] profile_result_2774145.nsys-rep[1/1] [11%                         ] profile_result_2774145.nsys-rep[1/1] [12%                         ] profile_result_2774145.nsys-rep[1/1] [13%                         ] profile_result_2774145.nsys-rep[1/1] [14%                         ] profile_result_2774145.nsys-rep[1/1] [=15%                        ] profile_result_2774145.nsys-rep[1/1] [=16%                        ] profile_result_2774145.nsys-rep[1/1] [=17%                        ] profile_result_2774145.nsys-rep[1/1] [==18%                       ] profile_result_2774145.nsys-rep[1/1] [==19%                       ] profile_result_2774145.nsys-rep[1/1] [==20%                       ] profile_result_2774145.nsys-rep[1/1] [=====================87%    ] profile_result_2774145.nsys-rep[1/1] [=====================88%    ] profile_result_27741Collecting data...
+Generating '/tmp/nsys-report-34b0.qdstrm'
+Collecting data...
+Generating '/tmp/nsys-report-aebe.qdstrm'
+45.nsys-rep[1/1] [========================100%] profile_result_2774145.nsys-rep[1/1] [========================100%] profile_result_2774145.nsys-rep
+Generated:
+    /home/hson17/nsys/distributed/./profile_result_2774145.nsys-rep
+[1/1] [0%                          ] profile_result_65131.nsys-rep[1/1] [0%                          ] profile_result_65131.nsys-rep[1/1] [===============66%          ] profile_result_65131.nsys-rep[1/1] [=================74%        ] profile_result_65131.nsys-rep[1/1] [===================82%      ] profile_result_65131.nsys-rep[1/1] [====================83%     ] profile_result_65131.nsys-rep[1/1] [====================84%     ] profile_result_65131.nsys-rep[1/1] [====================85%     ] profile_result_65131.nsys-rep[1/1] [=====================86%    ] profile_result_65131.nsys-rep[1/1] [=====================87%    ] profile_result_65131.nsys-rep[1/1] [=====================88%    ] profile_result_65131.nsys-rep[1/1] [=====================89%    ] profile_result_65131.nsys-rep[1/1] [========================100%] profile_result_65131.nsys-rep[1/1] [========================100%] profile_result_65131.nsys-rep
+Generated:
+    /home/hson17/nsys/distributed/./profile_result_65131.nsys-rep
+[1/1] [0%                          ] profile_result_65134.nsys-rep[1/1] [0%                          ] profile_result_65134.nsys-rep[1/1] [===============66%          ] profile_result_65134.nsys-rep[1/1] [=================74%        ] profile_result_65134.nsys-rep[1/1] [===================82%      ] profile_result_65134.nsys-rep[1/1] [====================83%     ] profile_result_65134.nsys-rep[1/1] [====================84%     ] profile_result_65134.nsys-rep[1/1] [====================85%     ] profile_result_65134.nsys-rep[1/1] [=====================86%    ] profile_result_65134.nsys-rep[1/1] [=====================87%    ] profile_result_65134.nsys-rep[1/1] [=====================88%    ] profile_result_65134.nsys-rep[1/1] [=====================89%    ] profile_result_65134.nsys-rep[1/1] [========================100%] profile_result_65134.nsys-rep[1/1] [========================100%] profile_result_65134.nsys-rep
+Generated:
+    /home/hson17/nsys/distributed/./profile_result_65134.nsys-rep
+Exporting to SQLite...
+Done. SQLite files are ready.

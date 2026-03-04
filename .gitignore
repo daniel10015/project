@@ -1,0 +1,39 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Nsight Systems outputs (often huge)
+*.qdrep
+*.nsys-rep
+*.sqlite
+*.sqlite3
+
+# Plots / generated images
+*.png
+*.pdf
+
+# Logs
+*.log
+*.err
+*.out
+
+# VSCode
+.vscode/
+
+# Local outputs
+myenv
+*.pyc
+
+# Experiments
+nsys/
+experiments/ddp/
+experiments/thru_com/
+
+# Data folders
+data/
+trash/
+
+# CSV results
+step_metrics.csv
+mem_log.csv*.tar.gz
+*.gz

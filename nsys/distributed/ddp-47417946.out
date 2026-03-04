@@ -1,0 +1,24 @@
+Starting training on 4 GPUs...
+Training Complete.
+Collecting data...
+Generating '/tmp/nsys-report-3a56.qdstrm'
+Collecting data...
+Generating '/tmp/nsys-report-7387.qdstrm'
+Collecting data...
+Generating '/tmp/nsys-report-973a.qdstrm'
+[1/1] [0%                          ] profile_result_resnet_50_rank2594916{SLURM_PROCID}.nsys-rep[1/1] [0%                          ] profile_result_resnet_50_rank2594916{SLURM_PROCID}.nsys-rep[1/1] [==19%                       ] profile_result_resnet_50_rank2594916{SLURM_PROCID}.nsys-rep[1/1] [==21%                       ] profile_result_resnet_50_rank2594916{SLURM_PROCID}.nsys-rep[1/1] [===22%                      ] profile_result_resnet_50_rank2594916{SLURM_PROCID}.nsys-rep[1/1] [==20%                       ] profile_result_resnet_50_rank2594916{SLURM_PROCID}.nsys-rep[1/1] [==21%                       ] profile_result_resnet_50_rank2594916{SLURM_PROCID}.nsys-rep[1/1] [=======38%                  ] profile_result_resnet_50_rank2594916{SLURM_PROCID}.nsys-rep[1/1] [============55%             ] profile_result_resnet_50_rank2594916{SLURM_PROCID}.nsys-rep[1/1] [=================72%        ] profile_result_resnet_50_rank2594916{SLURM_PROCID}.nsys-rep[1/1] [===================82%      ] profile_result_r[1/1] [0%                          ] profile_result_resnet_50_rank1473370{SLURM_PROCID}.nsys-rep[1/1] [0%                          ] profile_result_resnet_50_rank1473370{SLURM_PROCID}.nsys-rep[1/1] [0%                          ] profile_result_resnet_50_rank1473370{SLURM_PROCID}.nsys-rep[1/1] [==21%                       ] profile_result_resnet_50_rank1473370{SLURM_PROCID}.nsys-rep[1/1] [=======38%                  ] profile_result_resnet_50_rank1473370{SLURM_PROCID}.nsys-rep[1/1] [============55%             ] profile_result_resnet_50_rank1473370{SLURM_PROCID}.nsys-rep[1/1] [=================72%        ] profile_result_resnet_50_rank1473370{SLURM_PROCID}.nsys-rep[1/1] [===================82%      ] profile_result_resnet_50_rank1473370{SLURM_PROCID}.nsys-rep[1/1] [========================100%] profile_result_resnet_50_rank1473370{SLURM_PROCID}.nsys-rep[1/1] [========================100%] profile_result_resnet_50_rank1473370{SLURM_PROCID}.nsys-rep
+Generated:
+    /home/hson17/nsys/distributed/./profile_result_resnet_50_rank1473370{SLURM_PROCID}.nsys-rep
+esnet_50_rank2594916{SLURM_PROCID}.nsys-rep[1/1] [========================100%] profile_result_resnet_50_rank2594916{SLURM_PROCID}.nsys-rep[1/1] [========================100%] profile_result_resnet_50_rank2594916{SLURM_PROCID}.nsys-rep
+Generated:
+    /home/hson17/nsys/distributed/./profile_result_resnet_50_rank2594916{SLURM_PROCID}.nsys-rep
+Collecting data...
+Generating '/tmp/nsys-report-7b12.qdstrm'
+[1/1] [0%                          ] profile_result_resnet_50_rank1473367{SLURM_PROCID}.nsys-rep[1/1] [0%                          ] profile_result_resnet_50_rank1473367{SLURM_PROCID}.nsys-rep[1/1] [==21%                       ] profile_result_resnet_50_rank1473367{SLURM_PROCID}.nsys-rep[1/1] [=======38%                  ] profile_result_resnet_50_rank1473367{SLURM_PROCID}.nsys-rep[1/1] [============55%             ] profile_result_resnet_50_rank1473367{SLURM_PROCID}.nsys-rep[1/1] [=================72%        ] profile_result_resnet_50_rank1473367{SLURM_PROCID}.nsys-rep[1/1] [===================82%      ] profile_result_resnet_50_rank1473367{SLURM_PROCID}.nsys-rep[1/1] [========================100%] profile_result_resnet_50_rank1473367{SLURM_PROCID}.nsys-rep[1/1] [========================100%] profile_result_resnet_50_rank1473367{SLURM_PROCID}.nsys-rep
+Generated:
+    /home/hson17/nsys/distributed/./profile_result_resnet_50_rank1473367{SLURM_PROCID}.nsys-rep
+[1/1] [0%                          ] profile_result_resnet_50_rank2594913{SLURM_PROCID}.nsys-rep[1/1] [0%                          ] profile_result_resnet_50_rank2594913{SLURM_PROCID}.nsys-rep[1/1] [0%                          ] profile_result_resnet_50_rank2594913{SLURM_PROCID}.nsys-rep[1/1] [==21%                       ] profile_result_resnet_50_rank2594913{SLURM_PROCID}.nsys-rep[1/1] [=======38%                  ] profile_result_resnet_50_rank2594913{SLURM_PROCID}.nsys-rep[1/1] [============55%             ] profile_result_resnet_50_rank2594913{SLURM_PROCID}.nsys-rep[1/1] [=================72%        ] profile_result_resnet_50_rank2594913{SLURM_PROCID}.nsys-rep[1/1] [===================82%      ] profile_result_resnet_50_rank2594913{SLURM_PROCID}.nsys-rep[1/1] [========================100%] profile_result_resnet_50_rank2594913{SLURM_PROCID}.nsys-rep[1/1] [========================100%] profile_result_resnet_50_rank2594913{SLURM_PROCID}.nsys-rep
+Generated:
+    /home/hson17/nsys/distributed/./profile_result_resnet_50_rank2594913{SLURM_PROCID}.nsys-rep
+Exporting to SQLite...
+Done. SQLite files are ready.

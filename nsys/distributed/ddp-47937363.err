@@ -1,0 +1,30 @@
+
+=====================================================================
+This module is only for creating or activating Python environments:
+$ mamba create -n myenv -c conda-forge python=3 <package_name>
+$ source activate myenv
+
+Only run "pip install" after activating an environment.
+Running pip without activating an environment is known to cause issues.
+
+To list available environments:
+$ mamba info --envs
+
+Other uses are not tested. More info: https://links.asu.edu/solpy
+=====================================================================
+
+  
+/home/hson17/.conda/envs/cu13cupti/bin/python: can't open file '/home/hson17/nsys/distributed/main_ddp_resnet_50_nsys_batches_128_2.py': [Errno 2] No such file or directory
+/home/hson17/.conda/envs/cu13cupti/bin/python: can't open file '/home/hson17/nsys/distributed/main_ddp_resnet_50_nsys_batches_128_2.py': [Errno 2] No such file or directory
+srun: error: sg015: tasks 0-1: Exited with exit code 2
+/home/hson17/.conda/envs/cu13cupti/bin/python: can't open file '/home/hson17/nsys/distributed/main_ddp_resnet_50_nsys_batches_128_2.py': [Errno 2] No such file or directory
+/home/hson17/.conda/envs/cu13cupti/bin/python: can't open file '/home/hson17/nsys/distributed/main_ddp_resnet_50_nsys_batches_128_2.py': [Errno 2] No such file or directory
+srun: error: sg049: tasks 2-3: Exited with exit code 2
+Exportation error: File already exists: 'profile_result_resnet_50_batches_128_rank0.sqlite'.
+Use `--force-overwrite true` to overwrite existing files.
+Exportation error: File already exists: 'profile_result_resnet_50_batches_128_rank1.sqlite'.
+Use `--force-overwrite true` to overwrite existing files.
+Exportation error: File already exists: 'profile_result_resnet_50_batches_128_rank2.sqlite'.
+Use `--force-overwrite true` to overwrite existing files.
+Exportation error: File already exists: 'profile_result_resnet_50_batches_128_rank3.sqlite'.
+Use `--force-overwrite true` to overwrite existing files.

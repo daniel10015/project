@@ -1,0 +1,903 @@
+
+=====================================================================
+This module is only for creating or activating Python environments:
+$ mamba create -n myenv -c conda-forge python=3 <package_name>
+$ source activate myenv
+
+Only run "pip install" after activating an environment.
+Running pip without activating an environment is known to cause issues.
+
+To list available environments:
+$ mamba info --envs
+
+Other uses are not tested. More info: https://links.asu.edu/solpy
+=====================================================================
+
+  
+/etc/python/sitecustomize.py:236: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  mod = _original_import(name, globals, locals, fromlist, level)
+/etc/python/sitecustomize.py:236: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  mod = _original_import(name, globals, locals, fromlist, level)
+/etc/python/sitecustomize.py:236: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  mod = _original_import(name, globals, locals, fromlist, level)
+/etc/python/sitecustomize.py:236: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  mod = _original_import(name, globals, locals, fromlist, level)
+/etc/python/sitecustomize.py:236: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  mod = _original_import(name, globals, locals, fromlist, level)
+/etc/python/sitecustomize.py:236: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  mod = _original_import(name, globals, locals, fromlist, level)
+/etc/python/sitecustomize.py:236: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  mod = _original_import(name, globals, locals, fromlist, level)
+/etc/python/sitecustomize.py:236: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  mod = _original_import(name, globals, locals, fromlist, level)
+/etc/python/sitecustomize.py:236: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  mod = _original_import(name, globals, locals, fromlist, level)
+/etc/python/sitecustomize.py:236: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  mod = _original_import(name, globals, locals, fromlist, level)
+/etc/python/sitecustomize.py:236: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  mod = _original_import(name, globals, locals, fromlist, level)
+/etc/python/sitecustomize.py:236: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  mod = _original_import(name, globals, locals, fromlist, level)
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1275, in _try_get_data
+[rank0]:     data = self._data_queue.get(timeout=timeout)
+[rank0]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/queue.py", line 212, in get
+[rank0]:     raise Empty
+[rank0]: _queue.Empty
+
+[rank0]: The above exception was the direct cause of the following exception:
+
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/home/hson17/nsys/distributed/main_ddp_resent_50_cifar10_x10.py", line 241, in <module>
+[rank0]:     main()
+[rank0]:     ~~~~^^
+[rank0]:   File "/home/hson17/nsys/distributed/main_ddp_resent_50_cifar10_x10.py", line 227, in main
+[rank0]:     train_one_epoch(
+[rank0]:     ~~~~~~~~~~~~~~~^
+[rank0]:         ddp_model, train_loader, optimizer, loss_fn,
+[rank0]:         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:         local_rank, memlog, max_batches=args.max_batches
+[rank0]:         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:     )
+[rank0]:     ^
+[rank0]:   File "/home/hson17/nsys/distributed/main_ddp_resent_50_cifar10_x10.py", line 96, in train_one_epoch
+[rank0]:     data, label = next(iterator)
+[rank0]:                   ~~~~^^^^^^^^^^
+[rank0]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 732, in __next__
+[rank0]:     data = self._next_data()
+[rank0]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1482, in _next_data
+[rank0]:     idx, data = self._get_data()
+[rank0]:                 ~~~~~~~~~~~~~~^^
+[rank0]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1434, in _get_data
+[rank0]:     success, data = self._try_get_data()
+[rank0]:                     ~~~~~~~~~~~~~~~~~~^^
+[rank0]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1288, in _try_get_data
+[rank0]:     raise RuntimeError(
+[rank0]:         f"DataLoader worker (pid(s) {pids_str}) exited unexpectedly"
+[rank0]:     ) from e
+[rank0]: RuntimeError: DataLoader worker (pid(s) 2374658, 2374669) exited unexpectedly
+[rank0]:[W227 02:53:55.571430756 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[rank1]:[W227 02:53:57.490993634 TCPStore.cpp:125] [c10d] recvValue failed on SocketImpl(fd=13, addr=[sg026]:45846, remote=[sg026]:16961): Failed to recv, got 0 bytes. Connection was likely closed. Did the remote server shutdown or crash?
+Exception raised from recvBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:682 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffd9cd (0x1555276b19cd in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe57a (0x1555276b257a in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x31e (0x1555276ad29e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank1]:[W227 02:53:58.978198938 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Failed to recv, got 0 bytes. Connection was likely closed. Did the remote server shutdown or crash?
+[rank2]:[W227 02:53:59.193368102 TCPStore.cpp:125] [c10d] recvValue failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Failed to recv, got 0 bytes. Connection was likely closed. Did the remote server shutdown or crash?
+Exception raised from recvBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:682 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffd9cd (0x1555276b19cd in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe57a (0x1555276b257a in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x31e (0x1555276ad29e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:53:59.193374925 TCPStore.cpp:125] [c10d] recvValue failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Failed to recv, got 0 bytes. Connection was likely closed. Did the remote server shutdown or crash?
+Exception raised from recvBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:682 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffd9cd (0x1555276b19cd in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe57a (0x1555276b257a in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x31e (0x1555276ad29e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:53:59.214178708 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Failed to recv, got 0 bytes. Connection was likely closed. Did the remote server shutdown or crash?
+[rank3]:[W227 02:53:59.214179599 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Failed to recv, got 0 bytes. Connection was likely closed. Did the remote server shutdown or crash?
+[rank3]:[W227 02:54:00.214329001 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:00.217531341 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:00.214418539 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:00.218168188 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1275, in _try_get_data
+[rank2]:     data = self._data_queue.get(timeout=timeout)
+[rank2]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/queue.py", line 212, in get
+[rank2]:     raise Empty
+[rank2]: _queue.Empty
+
+[rank2]: The above exception was the direct cause of the following exception:
+
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "/home/hson17/nsys/distributed/main_ddp_resent_50_cifar10_x10.py", line 241, in <module>
+[rank2]:     main()
+[rank2]:     ~~~~^^
+[rank2]:   File "/home/hson17/nsys/distributed/main_ddp_resent_50_cifar10_x10.py", line 227, in main
+[rank2]:     train_one_epoch(
+[rank2]:     ~~~~~~~~~~~~~~~^
+[rank2]:         ddp_model, train_loader, optimizer, loss_fn,
+[rank2]:         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:         local_rank, memlog, max_batches=args.max_batches
+[rank2]:         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:     )
+[rank2]:     ^
+[rank2]:   File "/home/hson17/nsys/distributed/main_ddp_resent_50_cifar10_x10.py", line 96, in train_one_epoch
+[rank2]:     data, label = next(iterator)
+[rank2]:                   ~~~~^^^^^^^^^^
+[rank2]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 732, in __next__
+[rank2]:     data = self._next_data()
+[rank2]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1482, in _next_data
+[rank2]:     idx, data = self._get_data()
+[rank2]:                 ~~~~~~~~~~~~~~^^
+[rank2]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1434, in _get_data
+[rank2]:     success, data = self._try_get_data()
+[rank2]:                     ~~~~~~~~~~~~~~~~~~^^
+[rank2]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1288, in _try_get_data
+[rank2]:     raise RuntimeError(
+[rank2]:         f"DataLoader worker (pid(s) {pids_str}) exited unexpectedly"
+[rank2]:     ) from e
+[rank2]: RuntimeError: DataLoader worker (pid(s) 1538593) exited unexpectedly
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1275, in _try_get_data
+[rank3]:     data = self._data_queue.get(timeout=timeout)
+[rank3]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/queue.py", line 212, in get
+[rank3]:     raise Empty
+[rank3]: _queue.Empty
+
+[rank3]: The above exception was the direct cause of the following exception:
+
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "/home/hson17/nsys/distributed/main_ddp_resent_50_cifar10_x10.py", line 241, in <module>
+[rank3]:     main()
+[rank3]:     ~~~~^^
+[rank3]:   File "/home/hson17/nsys/distributed/main_ddp_resent_50_cifar10_x10.py", line 227, in main
+[rank3]:     train_one_epoch(
+[rank3]:     ~~~~~~~~~~~~~~~^
+[rank3]:         ddp_model, train_loader, optimizer, loss_fn,
+[rank3]:         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:         local_rank, memlog, max_batches=args.max_batches
+[rank3]:         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:     )
+[rank3]:     ^
+[rank3]:   File "/home/hson17/nsys/distributed/main_ddp_resent_50_cifar10_x10.py", line 96, in train_one_epoch
+[rank3]:     data, label = next(iterator)
+[rank3]:                   ~~~~^^^^^^^^^^
+[rank3]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 732, in __next__
+[rank3]:     data = self._next_data()
+[rank3]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1482, in _next_data
+[rank3]:     idx, data = self._get_data()
+[rank3]:                 ~~~~~~~~~~~~~~^^
+[rank3]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1434, in _get_data
+[rank3]:     success, data = self._try_get_data()
+[rank3]:                     ~~~~~~~~~~~~~~~~~~^^
+[rank3]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1288, in _try_get_data
+[rank3]:     raise RuntimeError(
+[rank3]:         f"DataLoader worker (pid(s) {pids_str}) exited unexpectedly"
+[rank3]:     ) from e
+[rank3]: RuntimeError: DataLoader worker (pid(s) 1538585) exited unexpectedly
+[rank3]:[W227 02:54:01.217676585 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:01.220653772 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:01.218322058 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:01.221671876 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W227 02:54:02.220830985 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:02.223944339 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:02.221777044 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:02.225161437 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W227 02:54:03.224128074 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:03.227162719 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:03.225262186 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:03.228204598 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W227 02:54:04.989255926 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=13, addr=[sg026]:45846, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank1]:[W227 02:54:04.018486781 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W227 02:54:04.227368737 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:04.230331808 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:04.228311740 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:04.231211121 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W227 02:54:05.020279817 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=13, addr=[sg026]:45846, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank1]:[W227 02:54:05.023159063 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W227 02:54:05.230537094 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:05.233557923 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:05.231343209 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:05.234379738 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W227 02:54:06.023315743 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=13, addr=[sg026]:45846, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank1]:[W227 02:54:06.026121221 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W227 02:54:06.233736409 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:06.236781163 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:06.234497340 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:06.237563494 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W227 02:54:07.026241402 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=13, addr=[sg026]:45846, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank1]:[W227 02:54:07.029256044 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W227 02:54:07.236907561 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:07.239852218 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:07.237682078 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:07.240917540 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W227 02:54:08.029371517 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=13, addr=[sg026]:45846, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank1]:[W227 02:54:08.032336405 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W227 02:54:08.239991590 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:08.242955262 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:08.241052645 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:08.244556592 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1275, in _try_get_data
+[rank1]:     data = self._data_queue.get(timeout=timeout)
+[rank1]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/queue.py", line 212, in get
+[rank1]:     raise Empty
+[rank1]: _queue.Empty
+
+[rank1]: The above exception was the direct cause of the following exception:
+
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/home/hson17/nsys/distributed/main_ddp_resent_50_cifar10_x10.py", line 241, in <module>
+[rank1]:     main()
+[rank1]:     ~~~~^^
+[rank1]:   File "/home/hson17/nsys/distributed/main_ddp_resent_50_cifar10_x10.py", line 227, in main
+[rank1]:     train_one_epoch(
+[rank1]:     ~~~~~~~~~~~~~~~^
+[rank1]:         ddp_model, train_loader, optimizer, loss_fn,
+[rank1]:         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:         local_rank, memlog, max_batches=args.max_batches
+[rank1]:         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:     )
+[rank1]:     ^
+[rank1]:   File "/home/hson17/nsys/distributed/main_ddp_resent_50_cifar10_x10.py", line 96, in train_one_epoch
+[rank1]:     data, label = next(iterator)
+[rank1]:                   ~~~~^^^^^^^^^^
+[rank1]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 732, in __next__
+[rank1]:     data = self._next_data()
+[rank1]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1482, in _next_data
+[rank1]:     idx, data = self._get_data()
+[rank1]:                 ~~~~~~~~~~~~~~^^
+[rank1]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1434, in _get_data
+[rank1]:     success, data = self._try_get_data()
+[rank1]:                     ~~~~~~~~~~~~~~~~~~^^
+[rank1]:   File "/home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/utils/data/dataloader.py", line 1288, in _try_get_data
+[rank1]:     raise RuntimeError(
+[rank1]:         f"DataLoader worker (pid(s) {pids_str}) exited unexpectedly"
+[rank1]:     ) from e
+[rank1]: RuntimeError: DataLoader worker (pid(s) 2374682) exited unexpectedly
+[rank1]:[W227 02:54:09.032489909 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=13, addr=[sg026]:45846, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank1]:[W227 02:54:09.035445781 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W227 02:54:09.243065960 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:09.246401952 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:09.244648035 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:09.247827051 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W227 02:54:10.035595638 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=13, addr=[sg026]:45846, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank1]:[W227 02:54:10.038463222 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[2026-02-27T02:54:10.458] error: Detected 3 oom_kill events in StepId=47937121.0. Some of the step tasks have been OOM Killed.
+[rank3]:[W227 02:54:10.246523140 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:10.249269543 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:10.247923473 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:10.251087972 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+srun: error: sg026: task 0: Out Of Memory
+[rank3]:[W227 02:54:11.249365344 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:11.252449993 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:11.251165157 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:11.254457487 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W227 02:54:12.252596930 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:12.255581531 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:12.254585348 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:12.257671200 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W227 02:54:13.255683232 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:13.258960243 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:13.257795133 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:13.261191468 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank1]:[W227 02:54:13.519103008 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=13, addr=[sg026]:45846, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank1]:[W227 02:54:13.538071519 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 1] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W227 02:54:14.259067135 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:14.261894019 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:14.261312185 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:14.264381386 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W227 02:54:15.262028452 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:15.265080660 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:15.264587513 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:15.268505540 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W227 02:54:16.265190027 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:16.267948002 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:16.268630665 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:16.272013365 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W227 02:54:17.268063138 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:17.270972228 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:17.272112992 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:17.275572647 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W227 02:54:18.271087425 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:18.273944396 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:18.275669990 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:18.278885756 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W227 02:54:19.274074401 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:19.277363534 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:19.279026671 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:19.282275259 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W227 02:54:20.277457251 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:20.280258878 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:20.282391097 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48174, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank2]:[W227 02:54:20.285682555 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W227 02:54:21.776128658 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[rank3]:[W227 02:54:21.280374315 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=12, addr=[sg049]:48180, remote=[sg026]:16961): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x80 (0x15555046fb80 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x5ffc5d1 (0x1555276b05d1 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: <unknown function> + 0x5ffce62 (0x1555276b0e62 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: <unknown function> + 0x5ffe96e (0x1555276b296e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #4: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x30e (0x1555276ad28e in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cpu.so)
+frame #5: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x3c8 (0x155504bf1e18 in /home/hson17/.conda/envs/cu13cupti/lib/python3.14/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0xdbbf4 (0x1555506cebf4 in /home/hson17/.conda/envs/cu13cupti/bin/../lib/libstdc++.so.6)
+frame #7: <unknown function> + 0x81ca (0x15555510c1ca in /lib64/libpthread.so.0)
+frame #8: clone + 0x43 (0x1555545dc8d3 in /lib64/libc.so.6)
+
+[rank3]:[W227 02:54:21.283185080 ProcessGroupNCCL.cpp:1771] [PG ID 0 PG GUID 0(default_pg) Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[2026-02-27T02:55:06.442] error: Detected 3 oom_kill events in StepId=47937121.0. Some of the step tasks have been OOM Killed.
+Processing 4093 events: [1%                                                    ]Processing 4093 events: [2%                                                    ]Processing 4093 events: [3%                                                    ]Processing 4093 events: [4%                                                    ]Processing 4093 events: [5%                                                    ]Processing 4093 events: [=6%                                                   ]Processing 4093 events: [=7%                                                   ]Processing 4093 events: [==8%                                                  ]Processing 4093 events: [==9%                                                  ]Processing 4093 events: [==10%                                                 ]Processing 4093 events: [==11%                                                 ]Processing 4093 events: [===12%                                                ]Processing 4093 events: [====13%                                               ]Processing 4093 events: [====14%                                               ]Processing 4093 events: [=====15%                                              ]Processing 4093 events: [=====16%                                              ]Processing 4093 events: [======17%                                             ]Processing 4093 events: [======18%                                             ]Processing 4093 events: [=======19%                                            ]Processing 4093 events: [=======20%                                            ]Processing 4093 events: [========21%                                           ]Processing 4093 events: [========22%                                           ]Processing 4093 events: [=========23%                                          ]Processing 4093 events: [=========24%                                          ]Processing 4093 events: [==========25%                                         ]Processing 4093 events: [===========26%                                        ]Processing 4093 events: [===========27%                                        ]Processing 4093 events: [============28%                                       ]Processing 4093 events: [============29%                                       ]Processing 4093 events: [=============30%                                      ]Processing 4093 events: [=============31%                                      ]Processing 4093 events: [==============32%                                     ]Processing 4093 events: [==============33%                                     ]Processing 4093 events: [===============34%                                    ]Processing 4093 events: [===============35%                                    ]Processing 4093 events: [================36%                                   ]Processing 4093 events: [================37%                                   ]Processing 4093 events: [=================38%                                  ]Processing 4093 events: [==================39%                                 ]Processing 4093 events: [==================40%                                 ]Processing 4093 events: [===================41%                                ]Processing 4093 events: [===================42%                                ]Processing 4093 events: [====================43%                               ]Processing 4093 events: [====================44%                               ]Processing 4093 events: [=====================45%                              ]Processing 4093 events: [=====================46%                              ]Processing 4093 events: [======================47%                             ]Processing 4093 events: [======================48%                             ]Processing 4093 events: [=======================49%                            ]Processing 4093 events: [========================50%                           ]Processing 4093 events: [========================51%                           ]Processing 4093 events: [=========================52%                          ]Processing 4093 events: [=========================53%                          ]Processing 4093 events: [==========================54%                         ]Processing 4093 events: [==========================55%                         ]Processing 4093 events: [===========================56%                        ]Processing 4093 events: [===========================57%                        ]Processing 4093 events: [============================58%                       ]Processing 4093 events: [============================59%                       ]Processing 4093 events: [=============================60%                      ]Processing 4093 events: [=============================61%                      ]Processing 4093 events: [==============================62%                     ]Processing 4093 events: [===============================63%                    ]Processing 4093 events: [===============================64%                    ]Processing 4093 events: [================================65%                   ]Processing 4093 events: [================================66%                   ]Processing 4093 events: [=================================67%                  ]Processing 4093 events: [=================================68%                  ]Processing 4093 events: [==================================69%                 ]Processing 4093 events: [==================================70%                 ]Processing 4093 events: [===================================71%                ]Processing 4093 events: [===================================72%                ]Processing 4093 events: [====================================73%               ]Processing 4093 events: [====================================74%               ]Processing 4093 events: [=====================================75%              ]Processing 4093 events: [======================================76%             ]Processing 4093 events: [======================================77%             ]Processing 4093 events: [=======================================78%            ]Processing 4093 events: [=======================================79%            ]Processing 4093 events: [========================================80%           ]Processing 4093 events: [========================================81%           ]Processing 4093 events: [=========================================82%          ]Processing 4093 events: [=========================================83%          ]Processing 4093 events: [==========================================84%         ]Processing 4093 events: [==========================================85%         ]Processing 4093 events: [===========================================86%        ]Processing 4093 events: [===========================================87%        ]Processing 4093 events: [============================================88%       ]Processing 4093 events: [=============================================89%      ]Processing 4093 events: [=============================================90%      ]Processing 4093 events: [==============================================91%     ]Processing 4093 events: [==============================================92%     ]Processing 4093 events: [===============================================93%    ]Processing 4093 events: [===============================================94%    ]Processing 4093 events: [================================================95%   ]Processing 4093 events: [================================================96%   ]Processing 4093 events: [=================================================97%  ]Processing 4093 events: [=================================================98%  ]Processing 4093 events: [==================================================99% ]Processing 4093 events: [==================================================100%]
+Processing 4102 events: [1%                                                    ]Processing 4102 events: [2%                                                    ]Processing 4102 events: [3%                                                    ]Processing 4102 events: [4%                                                    ]Processing 4102 events: [5%                                                    ]Processing 4102 events: [=6%                                                   ]Processing 4102 events: [=7%                                                   ]Processing 4102 events: [==8%                                                  ]Processing 4102 events: [==9%                                                  ]Processing 4102 events: [==10%                                                 ]Processing 4102 events: [==11%                                                 ]Processing 4102 events: [===12%                                                ]Processing 4102 events: [====13%                                               ]Processing 4102 events: [====14%                                               ]Processing 4102 events: [=====15%                                              ]Processing 4102 events: [=====16%                                              ]Processing 4102 events: [======17%                                             ]Processing 4102 events: [======18%                                             ]Processing 4102 events: [=======19%                                            ]Processing 4102 events: [=======20%                                            ]Processing 4102 events: [========21%                                           ]Processing 4102 events: [========22%                                           ]Processing 4102 events: [=========23%                                          ]Processing 4102 events: [=========24%                                          ]Processing 4102 events: [==========25%                                         ]Processing 4102 events: [===========26%                                        ]Processing 4102 events: [===========27%                                        ]Processing 4102 events: [============28%                                       ]Processing 4102 events: [============29%                                       ]Processing 4102 events: [=============30%                                      ]Processing 4102 events: [=============31%                                      ]Processing 4102 events: [==============32%                                     ]Processing 4102 events: [==============33%                                     ]Processing 4102 events: [===============34%                                    ]Processing 4102 events: [===============35%                                    ]Processing 4102 events: [================36%                                   ]Processing 4102 events: [================37%                                   ]Processing 4102 events: [=================38%                                  ]Processing 4102 events: [==================39%                                 ]Processing 4102 events: [==================40%                                 ]Processing 4102 events: [===================41%                                ]Processing 4102 events: [===================42%                                ]Processing 4102 events: [====================43%                               ]Processing 4102 events: [====================44%                               ]Processing 4102 events: [=====================45%                              ]Processing 4102 events: [=====================46%                              ]Processing 4102 events: [======================47%                             ]Processing 4102 events: [======================48%                             ]Processing 4102 events: [=======================49%                            ]Processing 4102 events: [========================50%                           ]Processing 4102 events: [========================51%                           ]Processing 4102 events: [=========================52%                          ]Processing 4102 events: [=========================53%                          ]Processing 4102 events: [==========================54%                         ]Processing 4102 events: [==========================55%                         ]Processing 4102 events: [===========================56%                        ]Processing 4102 events: [===========================57%                        ]Processing 4102 events: [============================58%                       ]Processing 4102 events: [============================59%                       ]Processing 4102 events: [=============================60%                      ]Processing 4102 events: [=============================61%                      ]Processing 4102 events: [==============================62%                     ]Processing 4102 events: [===============================63%                    ]Processing 4102 events: [===============================64%                    ]Processing 4102 events: [================================65%                   ]Processing 4102 events: [================================66%                   ]Processing 4102 events: [=================================67%                  ]Processing 4102 events: [=================================68%                  ]Processing 4102 events: [==================================69%                 ]Processing 4102 events: [==================================70%                 ]Processing 4102 events: [===================================71%                ]Processing 4102 events: [===================================72%                ]Processing 4102 events: [====================================73%               ]Processing 4102 events: [====================================74%               ]Processing 4102 events: [=====================================75%              ]Processing 4102 events: [======================================76%             ]Processing 4102 events: [======================================77%             ]Processing 4102 events: [=======================================78%            ]Processing 4102 events: [=======================================79%            ]Processing 4102 events: [========================================80%           ]Processing 4102 events: [========================================81%           ]Processing 4102 events: [=========================================82%          ]Processing 4102 events: [=========================================83%          ]Processing 4102 events: [==========================================84%         ]Processing 4102 events: [==========================================85%         ]Processing 4102 events: [===========================================86%        ]Processing 4102 events: [===========================================87%        ]Processing 4102 events: [============================================88%       ]Processing 4102 events: [=============================================89%      ]Processing 4102 events: [=============================================90%      ]Processing 4102 events: [==============================================91%     ]Processing 4102 events: [==============================================92%     ]Processing 4102 events: [===============================================93%    ]Processing 4102 events: [===============================================94%    ]Processing 4102 events: [================================================95%   ]Processing 4102 events: [================================================96%   ]Processing 4102 events: [=================================================97%  ]Processing 4102 events: [=================================================98%  ]Processing 4102 events: [==================================================99% ]Processing 4102 events: [==================================================100%]
+Processing 4125 events: [1%                                                    ]Processing 4125 events: [2%                                                    ]Processing 4125 events: [3%                                                    ]Processing 4125 events: [4%                                                    ]Processing 4125 events: [5%                                                    ]Processing 4125 events: [=6%                                                   ]Processing 4125 events: [=7%                                                   ]Processing 4125 events: [==8%                                                  ]Processing 4125 events: [==9%                                                  ]Processing 4125 events: [==10%                                                 ]Processing 4125 events: [==11%                                                 ]Processing 4125 events: [===12%                                                ]Processing 4125 events: [====13%                                               ]Processing 4125 events: [====14%                                               ]Processing 4125 events: [=====15%                                              ]Processing 4125 events: [=====16%                                              ]Processing 4125 events: [======17%                                             ]Processing 4125 events: [======18%                                             ]Processing 4125 events: [=======19%                                            ]Processing 4125 events: [=======20%                                            ]Processing 4125 events: [========21%                                           ]Processing 4125 events: [========22%                                           ]Processing 4125 events: [=========23%                                          ]Processing 4125 events: [=========24%                                          ]Processing 4125 events: [==========25%                                         ]Processing 4125 events: [===========26%                                        ]Processing 4125 events: [===========27%                                        ]Processing 4125 events: [============28%                                       ]Processing 4125 events: [============29%                                       ]Processing 4125 events: [=============30%                                      ]Processing 4125 events: [=============31%                                      ]Processing 4125 events: [==============32%                                     ]Processing 4125 events: [==============33%                                     ]Processing 4125 events: [===============34%                                    ]Processing 4125 events: [===============35%                                    ]Processing 4125 events: [================36%                                   ]Processing 4125 events: [================37%                                   ]Processing 4125 events: [=================38%                                  ]Processing 4125 events: [==================39%                                 ]Processing 4125 events: [==================40%                                 ]Processing 4125 events: [===================41%                                ]Processing 4125 events: [===================42%                                ]Processing 4125 events: [====================43%                               ]Processing 4125 events: [====================44%                               ]Processing 4125 events: [=====================45%                              ]Processing 4125 events: [=====================46%                              ]Processing 4125 events: [======================47%                             ]Processing 4125 events: [======================48%                             ]Processing 4125 events: [=======================49%                            ]Processing 4125 events: [========================50%                           ]Processing 4125 events: [========================51%                           ]Processing 4125 events: [=========================52%                          ]Processing 4125 events: [=========================53%                          ]Processing 4125 events: [==========================54%                         ]Processing 4125 events: [==========================55%                         ]Processing 4125 events: [===========================56%                        ]Processing 4125 events: [===========================57%                        ]Processing 4125 events: [============================58%                       ]Processing 4125 events: [============================59%                       ]Processing 4125 events: [=============================60%                      ]Processing 4125 events: [=============================61%                      ]Processing 4125 events: [==============================62%                     ]Processing 4125 events: [===============================63%                    ]Processing 4125 events: [===============================64%                    ]Processing 4125 events: [================================65%                   ]Processing 4125 events: [================================66%                   ]Processing 4125 events: [=================================67%                  ]Processing 4125 events: [=================================68%                  ]Processing 4125 events: [==================================69%                 ]Processing 4125 events: [==================================70%                 ]Processing 4125 events: [===================================71%                ]Processing 4125 events: [===================================72%                ]Processing 4125 events: [====================================73%               ]Processing 4125 events: [====================================74%               ]Processing 4125 events: [=====================================75%              ]Processing 4125 events: [======================================76%             ]Processing 4125 events: [======================================77%             ]Processing 4125 events: [=======================================78%            ]Processing 4125 events: [=======================================79%            ]Processing 4125 events: [========================================80%           ]Processing 4125 events: [========================================81%           ]Processing 4125 events: [=========================================82%          ]Processing 4125 events: [=========================================83%          ]Processing 4125 events: [==========================================84%         ]Processing 4125 events: [==========================================85%         ]Processing 4125 events: [===========================================86%        ]Processing 4125 events: [===========================================87%        ]Processing 4125 events: [============================================88%       ]Processing 4125 events: [=============================================89%      ]Processing 4125 events: [=============================================90%      ]Processing 4125 events: [==============================================91%     ]Processing 4125 events: [==============================================92%     ]Processing 4125 events: [===============================================93%    ]Processing 4125 events: [===============================================94%    ]Processing 4125 events: [================================================95%   ]Processing 4125 events: [================================================96%   ]Processing 4125 events: [=================================================97%  ]Processing 4125 events: [=================================================98%  ]Processing 4125 events: [==================================================99% ]Processing 4125 events: [==================================================100%]
+Processing 4132 events: [1%                                                    ]Processing 4132 events: [2%                                                    ]Processing 4132 events: [3%                                                    ]Processing 4132 events: [4%                                                    ]Processing 4132 events: [5%                                                    ]Processing 4132 events: [=6%                                                   ]Processing 4132 events: [=7%                                                   ]Processing 4132 events: [==8%                                                  ]Processing 4132 events: [==9%                                                  ]Processing 4132 events: [==10%                                                 ]Processing 4132 events: [==11%                                                 ]Processing 4132 events: [===12%                                                ]Processing 4132 events: [====13%                                               ]Processing 4132 events: [====14%                                               ]Processing 4132 events: [=====15%                                              ]Processing 4132 events: [=====16%                                              ]Processing 4132 events: [======17%                                             ]Processing 4132 events: [======18%                                             ]Processing 4132 events: [=======19%                                            ]Processing 4132 events: [=======20%                                            ]Processing 4132 events: [========21%                                           ]Processing 4132 events: [========22%                                           ]Processing 4132 events: [=========23%                                          ]Processing 4132 events: [=========24%                                          ]Processing 4132 events: [==========25%                                         ]Processing 4132 events: [===========26%                                        ]Processing 4132 events: [===========27%                                        ]Processing 4132 events: [============28%                                       ]Processing 4132 events: [============29%                                       ]Processing 4132 events: [=============30%                                      ]Processing 4132 events: [=============31%                                      ]Processing 4132 events: [==============32%                                     ]Processing 4132 events: [==============33%                                     ]Processing 4132 events: [===============34%                                    ]Processing 4132 events: [===============35%                                    ]Processing 4132 events: [================36%                                   ]Processing 4132 events: [================37%                                   ]Processing 4132 events: [=================38%                                  ]Processing 4132 events: [==================39%                                 ]Processing 4132 events: [==================40%                                 ]Processing 4132 events: [===================41%                                ]Processing 4132 events: [===================42%                                ]Processing 4132 events: [====================43%                               ]Processing 4132 events: [====================44%                               ]Processing 4132 events: [=====================45%                              ]Processing 4132 events: [=====================46%                              ]Processing 4132 events: [======================47%                             ]Processing 4132 events: [======================48%                             ]Processing 4132 events: [=======================49%                            ]Processing 4132 events: [========================50%                           ]Processing 4132 events: [========================51%                           ]Processing 4132 events: [=========================52%                          ]Processing 4132 events: [=========================53%                          ]Processing 4132 events: [==========================54%                         ]Processing 4132 events: [==========================55%                         ]Processing 4132 events: [===========================56%                        ]Processing 4132 events: [===========================57%                        ]Processing 4132 events: [============================58%                       ]Processing 4132 events: [============================59%                       ]Processing 4132 events: [=============================60%                      ]Processing 4132 events: [=============================61%                      ]Processing 4132 events: [==============================62%                     ]Processing 4132 events: [===============================63%                    ]Processing 4132 events: [===============================64%                    ]Processing 4132 events: [================================65%                   ]Processing 4132 events: [================================66%                   ]Processing 4132 events: [=================================67%                  ]Processing 4132 events: [=================================68%                  ]Processing 4132 events: [==================================69%                 ]Processing 4132 events: [==================================70%                 ]Processing 4132 events: [===================================71%                ]Processing 4132 events: [===================================72%                ]Processing 4132 events: [====================================73%               ]Processing 4132 events: [====================================74%               ]Processing 4132 events: [=====================================75%              ]Processing 4132 events: [======================================76%             ]Processing 4132 events: [======================================77%             ]Processing 4132 events: [=======================================78%            ]Processing 4132 events: [=======================================79%            ]Processing 4132 events: [========================================80%           ]Processing 4132 events: [========================================81%           ]Processing 4132 events: [=========================================82%          ]Processing 4132 events: [=========================================83%          ]Processing 4132 events: [==========================================84%         ]Processing 4132 events: [==========================================85%         ]Processing 4132 events: [===========================================86%        ]Processing 4132 events: [===========================================87%        ]Processing 4132 events: [============================================88%       ]Processing 4132 events: [=============================================89%      ]Processing 4132 events: [=============================================90%      ]Processing 4132 events: [==============================================91%     ]Processing 4132 events: [==============================================92%     ]Processing 4132 events: [===============================================93%    ]Processing 4132 events: [===============================================94%    ]Processing 4132 events: [================================================95%   ]Processing 4132 events: [================================================96%   ]Processing 4132 events: [=================================================97%  ]Processing 4132 events: [=================================================98%  ]Processing 4132 events: [==================================================99% ]Processing 4132 events: [==================================================100%]
