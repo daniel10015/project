@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -q debug                    
 #SBATCH --job-name=srun-test
-#SBATCH -N 2                    # number of nodes
+#SBATCH -N 1                    # number of nodes
 #SBATCH --ntasks-per-node=2     # number of processes per node
 #SBATCH -c 1			# cores per process
 #SBATCH --gpus-per-node=2       # GPUs per node

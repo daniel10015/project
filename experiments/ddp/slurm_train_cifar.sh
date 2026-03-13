@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -q debug                  
 #SBATCH --job-name=train-cifar
-#SBATCH -N 2                    # number of nodes
+#SBATCH -N 1                    # number of nodes
 #SBATCH --ntasks-per-node=2     # number of processes per node (should equal to num of GPUS)
 #SBATCH -c 4			# cores per process
 #SBATCH --gpus-per-node=2      # GPUs per node
