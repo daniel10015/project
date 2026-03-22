@@ -5,9 +5,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def pick_col(df, candidates):
+
     for c in candidates:
+        
         if c in df.columns:
             return c
+            
     return None
 
 def main():
@@ -18,6 +21,7 @@ def main():
     ap.add_argument("--out", default="memory_graph.png")
     ap.add_argument("--show", action="store_true")
     args = ap.parse_args()
+
 
     df = pd.read_csv(args.csv_path)
 

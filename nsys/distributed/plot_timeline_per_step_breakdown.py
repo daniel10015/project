@@ -674,7 +674,6 @@ def filter_by_step_ranges(
     return filtered_df
     # Ex) filtered_df
     '''
-
     filtered_df (final output):
             name     start      end    dur_ns  step  rel_start_ms  dur_ms
     0    data_wait  1005000  1060000   55000     1        0.5       55.0

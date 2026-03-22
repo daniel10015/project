@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import re
 import os
 from matplotlib.patches import Patch
+import glob
 # ==============================================================================
 # 1. Generic SQLite Helpers
 # ==============================================================================
@@ -33,13 +34,14 @@ def try_read_df(con: sqlite3.Connection, query: str) -> pd.DataFrame:
 
 
 
-
 def get_all_gpus(con: sqlite3.Connection) -> Dict[int, str]:
+
     """Fetches all GPUs and their names from the TARGET_INFO_GPU table."""
+
     gpu_map = {}
     try:
-        query = "SELECT id, name FROM TARGET_INFO_GPU"
-        df = try_read_df(con, query)
+        q = "SELECT id, name FROM TARGET_INFO_GPU"
+        df = try_read_df(con, q)
         
         if not df.empty:
             for _, row in df.iterrows():
@@ -67,6 +69,7 @@ class GpuDataset:
     gpu_info: Dict[int, str]
 
 def get_rank_from_filename(filename: str, index: int) -> int:
+
     """
     Find patterns like 'rank0', 'rank1' from the filename.
     If not found, use the list order (index) as the rank.
@@ -77,9 +80,11 @@ def get_rank_from_filename(filename: str, index: int) -> int:
     return index
 
 def load_single_gpu(filepath: str, rank: int, steps: List[int]) -> Optional[GpuDataset]:
+
     """
     Load detailed analysis data from a single SQLite file and return it as a GpuDataset object.
     """
+
     if not os.path.exists(filepath):
         print(f"[Skip] File not found: {filepath}")
         return None
@@ -115,9 +120,11 @@ def load_single_gpu(filepath: str, rank: int, steps: List[int]) -> Optional[GpuD
         con.close()
 
 def load_all_gpus(file_list: List[str], steps_to_analyze: List[int]) -> Dict[int, GpuDataset]:
+
     """
     Given a list of files, load data for all GPUs.
     """
+    
     gpu_data_map = {}
     
     # Sort filenames (rank0, rank1... order)
@@ -138,6 +145,7 @@ def load_all_gpus(file_list: List[str], steps_to_analyze: List[int]) -> Dict[int
     return gpu_data_map
 
 def get_all_step_intervals(gpu_data_map: Dict[int, 'GpuDataset']) -> Dict[int, pd.DataFrame]:
+
     """
     [Core Feature]
     Iterate over all loaded GPU datasets (GpuDataset),
@@ -175,7 +183,39 @@ def get_all_step_intervals(gpu_data_map: Dict[int, 'GpuDataset']) -> Dict[int, p
     #    Example: { 0: step_df_rank0, 1: step_df_rank1, ... }
     return all_steps_map
 
-def get_global_earliest_steps(all_steps_map: Dict[int, pd.DataFrame]) -> pd.DataFrame:
+    # Ex) all_steps_map
+    '''
+    all_steps_map = {
+        0: 
+        step    start           end
+        0       1000000000      1080000000
+        1       1080000000      1160000000
+        2       1160000000      1240000000
+
+        1:
+        step    start           end
+        0       1000000000      1080000000
+        1       1080000000      1160000000
+        2       1160000000      1240000000
+
+        2:
+        step    start           end
+        0       1000000000      1080000000
+        1       1080000000      1160000000
+        2       1160000000      1240000000
+
+        3:
+        step    start           end
+        0       1000000000      1080000000
+        1       1080000000      1160000000
+        2       1160000000      1240000000
+        
+    }   
+    '''
+
+def get_global_earliest_steps(all_steps_map: Dict[int, pd.DataFrame],
+                              gpu_data_map: Dict[int, GpuDataset]) -> pd.DataFrame:
+
     """
     [Core Feature]
     Compare step timestamps across all ranks and compute, for each step:
@@ -187,6 +227,7 @@ def get_global_earliest_steps(all_steps_map: Dict[int, pd.DataFrame]) -> pd.Data
     
     # 1. Combine all ranks into one big table by adding a 'rank' column.
     combined_list = []
+
     for rank, df in all_steps_map.items():
         temp_df = df.copy()
         temp_df["rank"] = rank
@@ -200,6 +241,7 @@ def get_global_earliest_steps(all_steps_map: Dict[int, pd.DataFrame]) -> pd.Data
     
     # 2. Group by step and compute global statistics
     grouped = big_df.groupby("step")
+    
     stats_df = grouped.agg(
         earliest_start=("start", "min"),
         latest_end=("end", "max")
@@ -220,7 +262,46 @@ def get_global_earliest_steps(all_steps_map: Dict[int, pd.DataFrame]) -> pd.Data
     final_df = stats_df.merge(fastest_ranks, on="step", how="left")
     final_df = final_df.merge(slowest_ranks, on="step", how="left")
     
+    gpu_end_map = {}   # { step: max(gpu_end) across all ranks }
+    gpu_start_map = {} # { step: min(gpu_start) across all ranks }  # Added
+
+    for rank, dataset in gpu_data_map.items():
+        if dataset.true_gpu_df.empty:
+            continue
+
+        gpu_batch_rows = dataset.true_gpu_df[
+            dataset.true_gpu_df["name"].str.contains(r"\[GPU\] Batch", regex=True)
+        ]
+
+        for _, row in gpu_batch_rows.iterrows():
+            step  = int(row["cpu_step"])
+            end   = int(row["end"])
+            start = int(row["start"])  # Added
+
+            # gpu_end_map
+            if step not in gpu_end_map:
+                gpu_end_map[step] = end
+            else:
+                gpu_end_map[step] = max(gpu_end_map[step], end)
+
+            # gpu_start_map  # Added
+            if step not in gpu_start_map:
+                gpu_start_map[step] = start
+            else:
+                gpu_start_map[step] = min(gpu_start_map[step], start)
+
+    final_df["gpu_latest_end"]     = final_df["step"].map(gpu_end_map)
+    final_df["gpu_earliest_start"] = final_df["step"].map(gpu_start_map)  # Added
+
     return final_df.sort_values("step")
+
+    '''
+    step  earliest_start    latest_end        fastest_rank  slowest_rank  gpu_earliest_start  gpu_latest_end
+    2     204,644,315,254   204,785,274,750   0             2             204,644,400,000     204,785,300,000
+    3     204,785,281,463   204,926,530,855   1             3             204,785,350,000     204,926,500,000
+    4     204,926,533,359   205,074,270,691   0             2             204,926,600,000     205,074,300,000
+    '''
+
 
 # --- Runtime Schema (CPU API calls) ---
 @dataclass
@@ -330,7 +411,7 @@ class MemcpySchema:
 
 def find_memcpy_schema(con: sqlite3.Connection) -> Optional[MemcpySchema]:
 
-    #all tables from sqlite
+    # All tables from sqlite
     tables = list_tables(con)
 
     candidates = [t for t in tables if "memcpy" in t.lower()]
@@ -370,10 +451,13 @@ class StringIdsSchema:
 
 def find_stringids_schema(con: sqlite3.Connection) -> Optional[StringIdsSchema]:
     tables = list_tables(con)
+
     candidates = [t for t in tables if "string" in t.lower() and "id" in t.lower()]
+
     for t in candidates:
         cols = set(table_columns(con, t))
-        if "id" in cols and "value" in cols: return StringIdsSchema(t, "id", "value")
+        if "id" in cols and "value" in cols:
+            return StringIdsSchema(t, "id", "value")
     return None
 
 # ==============================================================================
@@ -453,7 +537,7 @@ def load_memcpy_events(con: sqlite3.Connection,
                        want_kinds: Optional[List[int]] = None,
                        name: str = "gpu_memcpy_h2d") -> pd.DataFrame:
 
-    #query
+    # Query
     q = f"""
     SELECT
         {sch.start_col} AS start,
@@ -497,13 +581,13 @@ def load_runtime_events_in_nvtx(
     r_sch: RuntimeSchema
     ) -> pd.DataFrame:
     
-    """Loads Runtime API calls within NVTX ranges.(CPU launch time)"""
+    """Loads Runtime API calls within NVTX ranges (CPU launch time)."""
     if nvtx_df.empty: 
         return pd.DataFrame()
     min_start = nvtx_df["start"].min()
     max_end = nvtx_df["end"].max()
 
-    print(f"Loading Runtime events ({min_start} ~ {max_end})...")
+    #print(f"Loading Runtime events ({min_start} ~ {max_end})...")
 
 
     q = f"""
@@ -532,29 +616,42 @@ def load_runtime_events_in_nvtx(
 
 def load_all_kernels_for_span(
     con: sqlite3.Connection, 
-    k_sch: KernelSchema
+    k_sch: KernelSchema,
+    s_sch: StringIdsSchema = None 
     ) -> pd.DataFrame:
     
-    """Loads ALL kernels to calculate spans (needs correlationId). GPU kernel time"""
-    q = f"""
-    SELECT 
-        {k_sch.corr_id_col} AS correlationId, 
-        {k_sch.start_col} AS k_start, 
-        {k_sch.end_col} AS k_end 
-    FROM {k_sch.table} 
-    WHERE {k_sch.end_col} > {k_sch.start_col}"""
+    """Loads ALL kernels to calculate spans (needs correlationId). GPU kernel time."""
+    
+    if s_sch:
+        q = f"""
+        SELECT 
+            k.{k_sch.corr_id_col} AS correlationId, 
+            k.{k_sch.start_col}   AS k_start, 
+            k.{k_sch.end_col}     AS k_end,
+            s.{s_sch.value_col}   AS name
+        FROM {k_sch.table} k
+        LEFT JOIN {s_sch.table} s
+            ON k.{k_sch.name_id_col} = s.{s_sch.id_col}
+        WHERE k.{k_sch.end_col} > k.{k_sch.start_col}
+        """
+    else:
+        q = f"""
+        SELECT 
+            {k_sch.corr_id_col} AS correlationId, 
+            {k_sch.start_col}   AS k_start, 
+            {k_sch.end_col}     AS k_end
+        FROM {k_sch.table} 
+        WHERE {k_sch.end_col} > {k_sch.start_col}
+        """
     
     return try_read_df(con, q)
 
-        # Ex) df_kernels_all
+    # Ex) df_kernels_all (with s_sch)
     '''
-    Example output df (after running load_all_kernels_for_span):
-
-       correlationId   k_start    k_end
-    0          1001   1002200  1002600
-    1          1001   1002700  1003100
-    2          1002   1006200  1006900
-    3          1003   1060700  1061500
+       correlationId   k_start    k_end    name
+    0          1001   1002200  1002600    volta_sgemm_...
+    1          1002   1006200  1006900    ncclKernel_AllReduce_RING_LL
+    2          1003   1060700  1061500    ncclKernel_Broadcast_...
     '''
 
 
@@ -624,7 +721,8 @@ def map_nvtx_to_runtime(
 
 def compute_true_gpu_spans(
     mapping_df: pd.DataFrame, 
-    kernel_df: pd.DataFrame
+    kernel_df: pd.DataFrame,
+    step_df: pd.DataFrame = None
     ) -> pd.DataFrame:
     
     """Calculates [Min Kernel Start, Max Kernel End] for each NVTX."""
@@ -636,6 +734,13 @@ def compute_true_gpu_spans(
     print(f"Merging {len(mapping_df)} CPU-Mappings with {len(kernel_df)} GPU-Kernels...")
 
     merged = pd.merge(mapping_df, kernel_df, on="correlationId", how="inner")
+
+    nccl_in_backward_mask = (
+        merged["nvtx_name"].str.contains("backward", case=False) &
+        merged["name"].str.contains("nccl", case=False)
+    )
+    merged = merged[~nccl_in_backward_mask]
+
     #Ex) merged
     '''
     nvtx_name  nvtx_start  nvtx_end  correlationId  k_start  k_end
@@ -661,19 +766,144 @@ def compute_true_gpu_spans(
     # Rename for plotting: "[GPU] name"
     result["name"] = result["nvtx_name"].apply(lambda x: f"[GPU] {x}")
 
+    if step_df is not None and not step_df.empty:
+        # Assign step based on CPU timestamps
+        def assign_cpu_step(nvtx_start):
+            match = step_df[
+                (step_df["start"] <= nvtx_start) &
+                (step_df["end"]   >= nvtx_start)
+            ]
+            if not match.empty:
+                return int(match.iloc[0]["step"])
+            return -1
+
+        result["cpu_step"] = result["nvtx_start"].apply(assign_cpu_step)
+
+        # Extract gpu_step_df from [GPU] Batch_N rows in result
+        gpu_batch_rows = result[
+            result["nvtx_name"].str.contains(r"Batch", regex=True)
+        ]
+
+        # Use cpu_step instead of step_placeholder (Batch_N has cpu_step == gpu_step)
+        gpu_step_df = pd.DataFrame({
+            "step":  gpu_batch_rows["cpu_step"].values,
+            "start": gpu_batch_rows["start"].values,
+            "end":   gpu_batch_rows["end"].values
+        }).sort_values("step").reset_index(drop=True)
+
+        #print(f"  -> GPU step_df:\n{gpu_step_df.to_string()}")
+
+        # Assign step based on GPU timestamps
+        def assign_gpu_step(gpu_start):
+            for _, row in gpu_step_df.iterrows():
+                if row["start"] <= gpu_start < row["end"]:
+                    return int(row["step"])
+            return -1
+
+        result["gpu_step"] = result["start"].apply(assign_gpu_step)
+        result = result.sort_values(["cpu_step", "start"])
+
+        return result[["name", "start", "end", "dur_ns", "cpu_step", "gpu_step"]]
+
     return result[["name", "start", "end", "dur_ns"]]
 
-    #Ex)true_gpu_df
-    '''Example output result:
-               name     start   end  dur_ns
-    0  [GPU] forward    1100  1500     400
-    1  [GPU] backward   2100  3400    1300
+
+    #Ex) true_gpu_df
+    '''
+    name              start           end             dur_ns     step
+    [GPU] forward     204647402495    204691968325    44565830    6
+    [GPU] backward    204691989029    204783540204    91551175    6   <- belongs to step 6
+    [GPU] forward     204788589602    204833211272    44621670    7
+    [GPU] backward    204833233608    204924839119    91605511    7
+    [GPU] backward    204691989029    204783540204    91551175   -1   <- out of range!
     '''
 
 # ==============================================================================
-# 5. Plotting Logic
+# 5. Clock Offset Calculation
+# ==============================================================================
+
+def calculate_clock_offsets(
+    gpu_data_map: Dict[int, GpuDataset],
+    n_kernels: int = 20   # Number of AllReduce kernels used for median calculation
+) -> Dict[int, int]:
+    """
+    Calculates clock offsets using the median end time of the first n_kernels
+    AllReduce kernels for each rank.
+
+    Principle:
+      AllReduce is an operation that physically completes simultaneously across all ranks.
+      -> The difference between the median AllReduce end times of each rank = clock offset.
+    """
+
+    print("\n=== Starting Clock Offset Calculation ===")
+
+    # Step 1: Check NCCL kernel types per rank (for debugging)
+    print("\n[NCCL Kernel Type Check]")
+    for rank, dataset in gpu_data_map.items():
+        if dataset.nccl_df.empty:
+            print(f"  Rank {rank}: No NCCL data")
+            continue
+        print(f"\n  Rank {rank}:")
+        print(dataset.nccl_df["name"].value_counts().to_string())
+
+    # Step 2: Helper function to filter only AllReduce kernels
+    def get_allreduce_df(nccl_df: pd.DataFrame) -> pd.DataFrame:
+        if nccl_df.empty:
+            return pd.DataFrame()
+        return nccl_df[nccl_df["name"].str.contains("AllReduce", case=False)]
+
+    # Step 3: Collect the median AllReduce end time for each rank
+    print(f"\n[Offset Calculation] Using median of first {n_kernels} AllReduce end times")
+
+    median_allreduce_ends = {}
+
+    for rank, dataset in gpu_data_map.items():
+
+        allreduce_df = get_allreduce_df(dataset.nccl_df)
+
+        if allreduce_df.empty:
+            print(f"  [Warning] Rank {rank}: No AllReduce kernels found, setting offset to 0")
+            median_allreduce_ends[rank] = 0
+            continue
+
+        # Median of the n earliest AllReduce end times
+        first_n_end_times         = allreduce_df["end"].nsmallest(n_kernels)
+        median_allreduce_end_time = int(first_n_end_times.median())
+        median_allreduce_ends[rank] = median_allreduce_end_time
+
+        print(f"\n  Rank {rank}:")
+        print(f"    AllReduce kernels used: {len(first_n_end_times)}")
+        print(f"    Median end time:        {median_allreduce_end_time} ns")
+
+    # Step 4: Calculate offset relative to Rank 0
+    base_time = median_allreduce_ends[0]
+    print(f"\n  Reference time (Rank 0 median AllReduce end): {base_time} ns")
+
+    offsets = {}
+
+    for rank, median_allreduce_end_time in median_allreduce_ends.items():
+
+        offset = base_time - median_allreduce_end_time
+        offsets[rank] = offset
+
+        print(f"\n  Rank {rank} calculation:")
+        print(f"    median_allreduce_ends[0]      = {base_time} ns  (Rank 0 reference)")
+        print(f"    median_allreduce_ends[{rank}]      = {median_allreduce_end_time} ns  (Rank {rank} median)")
+        print(f"    offset = {base_time} - {median_allreduce_end_time}")
+        print(f"           = {offset} ns")
+        print(f"           = {offset/1e6:+.3f} ms")
+
+    print("\n=== Final Offsets ===")
+    for rank, offset in offsets.items():
+        print(f"  Rank {rank}: {offset/1e6:+.3f} ms")
+
+    return offsets
+        
+# ==============================================================================
+# 6. Plotting Logic
 # ==============================================================================
 def build_step_df_from_nvtx(nvtx_df: pd.DataFrame) -> pd.DataFrame:
+    
     """
     Robustly extract step ranges from NVTX data.
     - Supported patterns: Batch_10, step 10, Iter-10, Iteration:10, Global Step 10 (case-insensitive)
@@ -735,472 +965,753 @@ def build_step_df_from_nvtx(nvtx_df: pd.DataFrame) -> pd.DataFrame:
     '''
 
 
-def filter_by_step_ranges(source_df: pd.DataFrame, 
-                          step_df_sel: pd.DataFrame, 
-                          global_start: int) -> pd.DataFrame:
+def filter_by_step_ranges(
+    source_df: pd.DataFrame,
+    step_df_sel: pd.DataFrame,
+    global_start: int,
+    use_cpu_step: bool = False,
+    rank: int = 0,
+    offsets: Optional[Dict] = None
+    ) -> pd.DataFrame:
     """
-    Filters events that fall within the selected step time ranges.
-    Also calculates relative start time (ms) for plotting.
+    Filter events in source_df by step range.
+
+    use_cpu_step=True  -> NVTX (CPU events): filter by cpu_step column
+    use_cpu_step=False -> GPU kernels:        filter by gpu_step column
+    Neither available  -> fallback to time range filtering
+
+    rel_start_ms is always relative to global_start
+    -> enables straggler bottleneck identification
     """
+    """
+    [Changes]
+    Added rank and offsets parameters.
+    -> Instead of modifying data, only adjust the reference point (global_start) per rank.
+    -> Fast and preserves original data.
+
+    Mathematical basis:
+      (start + offset) - global_start
+      = start - (global_start - offset)
+      -> Exactly the same result as transforming the data directly.
+    """
+    # Compute adjusted_global_start per rank
+    # Do not touch the data; only shift the reference point
+
+    if offsets is not None and rank in offsets:
+        adjusted_global_start = global_start - offsets[rank]
+        # Example:
+        #   Rank 0: global_start - 0              = global_start (no change)
+        #   Rank 2: global_start - 180,000,000    (reference shifts 180ms forward)
+        #   -> Rank 2 events move 180ms to the right on the chart
+        #   -> Aligned with Rank 0
+    else:
+        adjusted_global_start = global_start
+
+    
     rows = []
 
     for _, srow in step_df_sel.iterrows():
-
-        s = int(srow["step"])
-
-        # s_start: start time of this step (ns)
-        # s_end:   end time of this step (ns)
+        s       = int(srow["step"])
         s_start = int(srow["start"])
-        s_end = int(srow["end"])
+        s_end   = int(srow["end"])
 
-        
-        # Keep all events that overlap with this step.
-        # source_df can be NVTX / MEMCPY / NCCL events (they all have start/end timestamps).
-        # Overlap condition:
-        #   event.start < step.end   AND   event.end > step.start
-        d = source_df[
-            (source_df["start"] >= s_start) &
-            (source_df["start"] <  s_end)
-        ].copy()
-        
+        if use_cpu_step and "cpu_step" in source_df.columns:
+            # NVTX: filter by cpu_step column
+            d = source_df[source_df["cpu_step"] == s].copy()
+
+        elif "gpu_step" in source_df.columns:
+            # GPU kernels: filter by gpu_step column
+            d = source_df[source_df["gpu_step"] == s].copy()
+
+        else:
+            # Fallback: filter by time range if no step column exists
+            d = source_df[
+                (source_df["start"] >= s_start) &
+                (source_df["start"] <  s_end)
+            ].copy()
+
         if d.empty:
             continue
-        
-        # Tag these events with the current step number (so we know which step window caught them).
+
         d["step"] = s
         rows.append(d)
-    
+
     if not rows:
         return pd.DataFrame()
 
-
     filtered_df = pd.concat(rows, ignore_index=True)
-    
-    # Drop duplicates in case an event spans across the boundary of two selected steps
-    # We only want to draw it once per its unique identity (name, start, end)
     filtered_df = filtered_df.drop_duplicates(subset=["name", "start", "end"])
 
-    # Convert to ms relative to the very first step's start
-    filtered_df["rel_start_ms"] = (filtered_df["start"] - global_start) / 1e6
-    filtered_df["dur_ms"] = (filtered_df["end"] - filtered_df["start"]) / 1e6
+    # Always fix global_start -> enables straggler bottleneck identification
+    filtered_df["rel_start_ms"] = (filtered_df["start"] - adjusted_global_start) / 1e6
+    filtered_df["dur_ms"]       = (filtered_df["end"]   - filtered_df["start"]) / 1e6
 
     return filtered_df
-    # Ex) filtered_df
-    '''
-    filtered_df (final output):
-            name     start      end    dur_ns   step  rel_start_ms  dur_ms
-    0    data_wait  1005000  1060000   55000     1        0.5       55.0
-    1   gpu_compute  1060000  1195000  135000    1        6.0      135.0
-    2   gpu_compute  1995000  2050000   55000    2      995.0       55.0
-    3   ncclKernelX  2295000  2310000   15000    2     1295.0       15.0
-    4    data_wait  1199000  1201000    2000     1      199.0        2.0
-    '''
+
+# Ex) filtered_df
+'''
+        name          start       end     dur_ns  step  rel_start_ms  dur_ms
+0   data_wait       1005000   1060000      55000     1           0.5    55.0
+1  gpu_compute      1060000   1195000     135000     1           6.0   135.0
+2  gpu_compute      1995000   2050000      55000     2         995.0    55.0
+3  ncclKernelX      2295000   2310000      15000     2        1295.0    15.0
+4    data_wait      1199000   1201000       2000     1         199.0     2.0
+'''
+def draw_bar_with_cpu_boundary(
+    ax,
+    rel_start_ms: float,
+    dur_ms: float,
+    cpu_step: int,
+    gpu_step: int,
+    cpu_boundaries_ms: List[float],
+    y_pos: float,
+    lane_height: float,
+    rank_color: str,
+    alpha: float = 0.9
+):
+    bar_start = rel_start_ms
+    bar_end   = rel_start_ms + dur_ms
+
+    if cpu_step == gpu_step or gpu_step == -1:
+        ax.broken_barh([(bar_start, dur_ms)], (y_pos, lane_height),
+                       facecolors=rank_color, alpha=alpha,
+                       linewidth=0.5, edgecolor='black')
+        return
+
+    crossed_boundary = None
+    for boundary_ms in cpu_boundaries_ms:
+        if bar_start < boundary_ms < bar_end:
+            crossed_boundary = boundary_ms
+            break
+
+    if crossed_boundary is None:
+        ax.broken_barh([(bar_start, dur_ms)], (y_pos, lane_height),
+                       facecolors=rank_color, alpha=alpha,
+                       linewidth=0.5, edgecolor='black')
+        return
+
+    # Left segment: normal range
+    left_dur = crossed_boundary - bar_start
+    ax.broken_barh([(bar_start, left_dur)], (y_pos, lane_height),
+                   facecolors=rank_color, alpha=alpha,
+                   linewidth=0.5, edgecolor='black')
+
+    # Right segment: overflow range -> hatching
+    right_dur = bar_end - crossed_boundary
+    ax.broken_barh([(crossed_boundary, right_dur)], (y_pos, lane_height),
+                   facecolors=rank_color, alpha=alpha * 0.5,
+                   hatch='////', linewidth=0.5, edgecolor='red')
+
+    ax.vlines(x=crossed_boundary, ymin=y_pos, ymax=y_pos + lane_height,
+              colors='red', linewidth=2, linestyle='--', alpha=0.8)
+
 
 def plot_timeline_custom_axis(
-    gpu_data_map: Dict[int, GpuDataset],
-    final_df: pd.DataFrame,
-    all_steps_map: Dict[int, pd.DataFrame],
-    steps_to_plot: List[int],
-    out_png="timeline_custom_axis.png", 
-    show=True):
+    gpu_data_map, 
+    final_df, 
+    all_steps_map,
+    steps_to_plot, 
+    out_png="timeline.png", 
+    show=True,
+    color_by="rank",
+    offsets: Optional[Dict] = None
+    ):
 
-    print(f"Plotting steps: {steps_to_plot} with Custom Y-Axis...")
-
-    # ---------------------------------------------------------
-    # 1. Preprocessing: scan all GPU datasets to build the final Y-axis label list
-    # ---------------------------------------------------------
-    
-    # (1) Define base row names
-    base_names = ["data_wait", "h2d", "gpu_compute", "NCCL"]
-    
-    # (2) Collect NCCL types (scan all ranks and only keep ones that exist)
-    found_nccl_types = set()
-    
-    
-    # (3) Fixed NVTX markers
-    fixed_nvtx = ['forward',  'loss', 'backward', 'opt_step', 'nccl_sync']
-    
-    # (4) Build the final Y-axis list (remove duplicates but preserve order)
-    # Order: Base -> NCCL -> Fixed
-    full_y_names = []
-    
-    # Base names (you can always include them, or filter later if desired)
-    full_y_names.extend(base_names)
-    full_y_names.extend(fixed_nvtx)
-    # full_y_names.extend(nccl_names)
-    
-    
-    # Remove duplicates (Python 3.7+ dict preserves insertion order)
-    full_y_names = list(dict.fromkeys(full_y_names))
-    
-    # (5) Build mapping dict: name -> Y index
-    # Example: {'data_wait': 0, 'h2d': 1, 'NCCL AllReduce': 2, ...}
-    y_map = {name: i for i, name in enumerate(full_y_names)}
-    
-    print(f"--- Generated Y-Axis Labels ({len(full_y_names)}) ---")
-    print(full_y_names)
-
-
-    # ---------------------------------------------------------
-    # 2. Prepare the figure canvas
-    # ---------------------------------------------------------
-    # Define the global reference time
     target_stats = final_df[final_df["step"].isin(steps_to_plot)]
-    
     if target_stats.empty:
         print(f"[Error] No data for steps {steps_to_plot}")
         return
-    global_start = target_stats["earliest_start"].min()
+
+    # Start: CPU-based / End: GPU-based
+    global_start  = int(target_stats["earliest_start"].min())
+    global_end    = int(target_stats["gpu_latest_end"].max())
+    global_end_ms = (global_end - global_start) / 1e6
+
+    print(f"  -> global_start (CPU): {global_start}")
+    print(f"  -> global_end   (GPU): {global_end}")
+    print(f"  -> Total timeline:     {global_end_ms:.2f} ms")
+
+    # Convert CPU step boundaries to ms
+    # Each step's CPU latest_end is a boundary line
+    cpu_boundaries_ms = []
+    for _, srow in target_stats.iterrows():
+        boundary = (srow["latest_end"] - global_start) / 1e6
+        cpu_boundaries_ms.append(boundary)
+
+    print(f"  -> CPU step boundaries (ms): {cpu_boundaries_ms}")
 
     # Figure setup
-    # Height: (num items) * (height per item) + padding
+    base_names  = ["data_wait", "h2d", "gpu_compute", "NCCL"]
+    fixed_nvtx  = ["zero_grad","forward", "loss", "backward", "opt_step"]
+    full_y_names = list(dict.fromkeys(base_names + fixed_nvtx))
+    y_map = {name: i for i, name in enumerate(full_y_names)}
+
     fig_height = len(full_y_names) * 1.5 + 2
     plt.figure(figsize=(24, fig_height))
+
     ax = plt.gca()
 
-    # Rank colors (up to 8)
-    colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 
+    colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red',
               'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray']
-    
-    # Bar height per lane (so we can stack ranks inside a single row)
-    # Example: if row height is 0.8 and we have 4 ranks, each rank gets 0.2
-    lane_height = 0.8 / len(gpu_data_map) 
+
+    def get_color(rank, step_num):
+        if color_by == "step":
+            return step_color_map.get(step_num, 'tab:gray')
+        else:
+            return colors[rank % len(colors)]
 
 
-    # ---------------------------------------------------------
-    # 3. Iterate over GPUs and plot
-    # ---------------------------------------------------------
+    lane_height = 0.8 / len(gpu_data_map)
     sorted_ranks = sorted(gpu_data_map.keys())
 
+    step_color_map = {}
+    for i, step in enumerate(sorted(steps_to_plot)):
+        step_color_map[step] = colors[i % len(colors)]
+
+    def get_color(rank, step_num):
+        if color_by == "step":
+            return step_color_map.get(step_num, 'tab:gray')
+        else:
+            return colors[rank % len(colors)]
+
+
     for rank in sorted_ranks:
-        dataset = gpu_data_map[rank]
+
+        dataset    = gpu_data_map[rank]
         rank_color = colors[rank % len(colors)]
-        
-        # (1) Filter data (Time Alignment)
-        if rank not in all_steps_map: 
+
+        if rank not in all_steps_map:
             continue
+
         step_df_sel = all_steps_map[rank][all_steps_map[rank]["step"].isin(steps_to_plot)]
-        if step_df_sel.empty: 
+        if step_df_sel.empty:
             continue
-        
-        # Load each dataset with filtering applied
-        df_nvtx = filter_by_step_ranges(dataset.nvtx_df, step_df_sel, global_start)
 
-        df_nccl = pd.DataFrame()
-        if not dataset.nccl_df.empty:
-            df_nccl = filter_by_step_ranges(dataset.nccl_df, step_df_sel, global_start)
+        df_nvtx   = filter_by_step_ranges(dataset.nvtx_df,     step_df_sel, global_start, use_cpu_step=True,rank=rank, offsets=offsets)
+        df_nccl   = filter_by_step_ranges(dataset.nccl_df,     step_df_sel, global_start,rank=rank, offsets=offsets) if not dataset.nccl_df.empty   else pd.DataFrame()
+        df_memcpy = filter_by_step_ranges(dataset.memcpy_df,   step_df_sel, global_start,rank=rank, offsets=offsets) if not dataset.memcpy_df.empty else pd.DataFrame()
+        df_compute= filter_by_step_ranges(dataset.true_gpu_df, step_df_sel, global_start,rank=rank, offsets=offsets) if not dataset.true_gpu_df.empty else pd.DataFrame()
 
-        df_memcpy = pd.DataFrame()
-        if not dataset.memcpy_df.empty:
-            df_memcpy = filter_by_step_ranges(dataset.memcpy_df, step_df_sel, global_start)
+        #print(df_nvtx)
+        # print(df_nccl)
+        # print(df_memcpy)
+        print(df_compute)
 
-        df_compute = pd.DataFrame()
-        if not dataset.true_gpu_df.empty:
-            df_compute = filter_by_step_ranges(dataset.true_gpu_df, step_df_sel, global_start)
-
-
-        # -------------------------------------------------------
-        # (2) Plotting: map each event type to the correct y_map row
-        # -------------------------------------------------------
-        
-        # Small offset per rank (stack lanes: rank 0 bottom, rank 3 top)
         rank_offset = rank * lane_height
 
-        # [A] GPU Compute -> map to 'gpu_compute' row
+        # [A] gpu_compute row
         if not df_compute.empty and "gpu_compute" in y_map:
+
             y_base = y_map["gpu_compute"]
-            xranges = list(zip(df_compute["rel_start_ms"], df_compute["dur_ms"]))
-            ax.broken_barh(xranges, (y_base + rank_offset, lane_height), 
-                           facecolors=rank_color, alpha=0.9, linewidth=0.5, edgecolor='black')
 
+            for _, row in df_compute.iterrows():
 
+                cpu_step = int(row.get("cpu_step", row["step"]))
+                gpu_step = int(row.get("gpu_step", row["step"]))
+                step_num = gpu_step if gpu_step != -1 else cpu_step
 
-        # [B] Memcpy -> map to 'h2d' row (assumption: memcpy is shown under h2d)
-        # [B] Smart Overlay for Memcpy (CPU HtoD + GPU HtoD)
-        # ---------------------------------------------------------
-        # Requirement: y_map must contain the key "h2d"
+                bar_color = get_color(rank, step_num) 
+                
+                draw_bar_with_cpu_boundary(
+                    ax=ax,
+                    rel_start_ms=row["rel_start_ms"],
+                    dur_ms=row["dur_ms"],
+                    cpu_step=cpu_step,
+                    gpu_step=gpu_step,
+                    cpu_boundaries_ms=cpu_boundaries_ms,
+                    y_pos=y_base + rank_offset,
+                    lane_height=lane_height,
+                    rank_color=bar_color,
+                    alpha=0.9
+                )
+                # Text label
+                if row["dur_ms"] > 10:
+                    ax.text(
+                        x=row["rel_start_ms"] + row["dur_ms"] / 2,
+                        y=y_base + rank_offset + lane_height / 2,
+                        s=f"S{step_num}",
+                        ha='center', va='center',
+                        fontsize=7, fontweight='bold',
+                        color='white', clip_on=True
+                    )
+                if color_by == "step":
+                    ax.text(
+                        x=row["rel_start_ms"] + 1,
+                        y=y_base + rank_offset + lane_height / 2,
+                        s=f"R{rank}",
+                        ha='left', va='center',
+                        fontsize=6, fontweight='bold',
+                        color='white', clip_on=True
+                    )
+
+        # [B] h2d row
         if "h2d" in y_map:
-            y_base = y_map["h2d"]
+            y_base    = y_map["h2d"]
             current_y = y_base + rank_offset
-            
-            # 1. Draw CPU (NVTX) background (light color)
-            # -----------------------------------------------------
-            if not df_nvtx.empty:
-                # Find ranges in NVTX name that contain "h2d" (adjust keywords if needed)
-                cpu_mask = df_nvtx["name"].str.contains("h2d", case=False, regex=True)
-                cpu_rows = df_nvtx[cpu_mask]
-                
-                for _, cpu_row in cpu_rows.iterrows():
-                    cpu_start = cpu_row["rel_start_ms"]
-                    cpu_dur = cpu_row["dur_ms"]
-                    
-                    # Light background
-                    ax.broken_barh([(cpu_start, cpu_dur)], 
-                                   (current_y, lane_height), 
-                                   facecolors=rank_color, 
-                                   alpha=0.3,       # light (CPU command time)
-                                   linewidth=0)
-
-            # 2. Draw GPU (Actual Memcpy) segments (strong color)
-            # -----------------------------------------------------
             if not df_memcpy.empty:
-                # Assume df_memcpy is already filtered to kind=1 (HtoD)
-                # If not, you can filter here as well.
-                
-                xranges = list(zip(df_memcpy["rel_start_ms"], df_memcpy["dur_ms"]))
-                
-                ax.broken_barh(xranges, 
-                               (current_y, lane_height), 
-                               facecolors=rank_color, 
-                               alpha=1.0,           # strong (actual transfer time)
-                               linewidth=0.5, 
-                               edgecolor='black')   # outline for emphasis
+                for _, row in df_memcpy.iterrows():
 
-        # [C] NCCL -> map to a single "NCCL" row
+                    cpu_step = int(row.get("cpu_step", row["step"]))
+                    gpu_step = int(row.get("gpu_step", row["step"]))
+                    step_num = gpu_step if gpu_step != -1 else cpu_step
+
+                    bar_color = get_color(rank, step_num)
+
+                    draw_bar_with_cpu_boundary(
+                        ax=ax,
+                        rel_start_ms=row["rel_start_ms"],
+                        dur_ms=row["dur_ms"],
+                        cpu_step=cpu_step,
+                        gpu_step=gpu_step,
+                        cpu_boundaries_ms=cpu_boundaries_ms,
+                        y_pos=current_y,
+                        lane_height=lane_height,
+                        rank_color=bar_color,
+                        alpha=1.0
+                    )
+                    # Text label
+                    if row["dur_ms"] > 10:
+                        ax.text(
+                            x=row["rel_start_ms"] + row["dur_ms"] / 2,
+                            y=current_y + lane_height / 2,
+                            s=f"S{step_num}",
+                            ha='center', va='center',
+                            fontsize=7, fontweight='bold',
+                            color='white', clip_on=True
+                        )
+                    if color_by == "step":
+                        ax.text(
+                            x=row["rel_start_ms"] + 1,
+                            y=current_y + lane_height / 2,
+                            s=f"R{rank}",
+                            ha='left', va='center',
+                            fontsize=6, fontweight='bold',
+                            color='white', clip_on=True
+                        )
+
+
+        # [C] NCCL row
         if not df_nccl.empty and "NCCL" in y_map:
-            y_base = y_map["NCCL"]
+            y_base    = y_map["NCCL"]
             current_y = y_base + rank_offset
-            
-            # Extract all NCCL time segments (without separating types)
-            xranges = list(zip(df_nccl["rel_start_ms"], df_nccl["dur_ms"]))
-            
-            # Draw
-            ax.broken_barh(xranges, 
-                           (current_y, lane_height), 
-                           facecolors=rank_color, 
-                           alpha=0.9,           # strong (important)
-                           linewidth=0.5, 
-                           edgecolor='black')   # outline
+            for _, row in df_nccl.iterrows():
 
+                cpu_step = int(row.get("cpu_step", row["step"]))
+                gpu_step = int(row.get("gpu_step", row["step"]))
 
-        # [D] NVTX Markers -> map to matching rows by name
-        # [E] Smart Overlay: CPU (light) + GPU (strong) + end marker line
-        # Target phases to match against NVTX names
-        target_phases = ["data_wait","Forward", "Backward", "Loss",  'nccl_sync', "opt_step"] 
-        
+                step_num = gpu_step if gpu_step != -1 else cpu_step
+
+                bar_color = get_color(rank, step_num)
+
+                draw_bar_with_cpu_boundary(
+                    ax=ax,
+                    rel_start_ms=row["rel_start_ms"],
+                    dur_ms=row["dur_ms"],
+                    cpu_step=cpu_step,
+                    gpu_step=gpu_step,
+                    cpu_boundaries_ms=cpu_boundaries_ms,
+                    y_pos=current_y,
+                    lane_height=lane_height,
+                    rank_color=bar_color,
+                    alpha=0.9
+                )
+                # Text label
+                if row["dur_ms"] > 10:
+                    ax.text(
+                        x=row["rel_start_ms"] + row["dur_ms"] / 2,
+                        y=current_y + lane_height / 2,
+                        s=f"S{step_num}",
+                        ha='center', va='center',
+                        fontsize=7, fontweight='bold',
+                        color='white', clip_on=True
+                    )
+                if color_by == "step":
+                    ax.text(
+                        x=row["rel_start_ms"] + 1,
+                        y=current_y + lane_height / 2,
+                        s=f"R{rank}",
+                        ha='left', va='center',
+                        fontsize=6, fontweight='bold',
+                        color='white', clip_on=True
+                    )
+
+        # [D] NVTX rows (forward, backward, loss, opt_step, nccl_sync)
+        target_phases = ["data_wait","h2d", "zero_grad", "Forward", "Backward", "Loss", "nccl_sync", "opt_step","NCCL_AllReduce"]
+
         if not df_nvtx.empty:
             for target_name in target_phases:
-                
-                # 1. Draw CPU (NVTX) background
-                mask = df_nvtx["name"].str.contains(target_name, case=False, regex=False)
+
+                mask     = df_nvtx["name"].str.contains(target_name, case=False, regex=False)
                 cpu_rows = df_nvtx[mask]
-                
-                if cpu_rows.empty: 
+                if cpu_rows.empty:
                     continue
 
-                # Find Y-axis row
                 base_y = -1
                 for key in y_map:
                     if target_name.lower() in key.lower():
                         base_y = y_map[key]
                         break
-                if base_y == -1: 
-                    continue 
+                if base_y == -1:
+                    continue
 
                 current_y = base_y + rank_offset
-                
-                # CPU loop
-                for _, cpu_row in cpu_rows.iterrows():
-                    cpu_start = cpu_row["rel_start_ms"]
-                    cpu_end   = cpu_start + cpu_row["dur_ms"] # start + duration
-                    
-                    # (1) Light CPU bar
-                    ax.broken_barh([(cpu_start, cpu_row["dur_ms"])], 
-                                   (current_y, lane_height), 
-                                   facecolors=rank_color, 
-                                   alpha=0.3, linewidth=0)
-                    
-                    # (2) Solid vertical line at CPU end
-                    ax.vlines(x=cpu_end, 
-                              ymin=current_y, ymax=current_y + lane_height,
-                              colors='black', linestyles='solid', linewidth=1.5, alpha=0.8)
 
-                # 2. Overlay GPU (True Spans)
-                # Data already mapped by correlation ID in process_full_analysis
+                # CPU background (light color)
+                for _, cpu_row in cpu_rows.iterrows():
+
+                    cpu_start = cpu_row["rel_start_ms"]
+                    cpu_dur   = cpu_row["dur_ms"]
+                    step_num  = int(cpu_row["step"])
+
+                    bar_color = get_color(rank, step_num) 
+
+                    ax.broken_barh(
+                        [(cpu_start, cpu_dur)],
+                        (current_y, lane_height),
+                        facecolors=bar_color,
+                        alpha=0.3,
+                        linewidth=0
+                    )
+                    if color_by == "step":
+                        ax.text(
+                            x=cpu_start + 1,
+                            y=current_y + lane_height / 2,
+                            s=f"R{rank}",
+                            ha='left', va='center',
+                            fontsize=6, fontweight='bold',
+                            color='black', clip_on=True
+                        )
+
+                    # CPU end vertical line
+                    ax.vlines(
+                        x=cpu_start + cpu_dur,
+                        ymin=current_y,
+                        ymax=current_y + lane_height,
+                        colors='black',
+                        linestyles='solid',
+                        linewidth=1.5,
+                        alpha=0.8
+                    )
+
+                    # Step number label inside CPU bar
+                    ax.text(
+                        x=cpu_start + cpu_dur / 2,
+                        y=current_y + lane_height / 2,
+                        s=f"S{step_num}",
+                        ha='center',
+                        va='center',
+                        fontsize=7,
+                        fontweight='bold',
+                        color='black',
+                        clip_on=True
+                    )
+
+                # GPU span overlay
                 if not df_compute.empty:
-                    # df_compute["name"] format is "[GPU] Forward"
-                    gpu_mask = df_compute["name"].str.contains(target_name, case=False, regex=False)
+                    gpu_mask     = df_compute["name"].str.contains(target_name, case=False, regex=False)
                     relevant_gpu = df_compute[gpu_mask]
-                    
+
                     if not relevant_gpu.empty:
-                        gpu_xranges = list(zip(relevant_gpu["rel_start_ms"], relevant_gpu["dur_ms"]))
-                        
-                        ax.broken_barh(gpu_xranges, 
-                                       (current_y, lane_height), 
-                                       facecolors=rank_color, 
-                                       alpha=1.0,       # strong (real GPU work)
-                                       linewidth=0.5, 
-                                       edgecolor='white')
-    
-    # Step Lines
-    for _, srow in step_df_sel.iterrows():
-        x0 = (srow["start"] - global_start) / 1e6
-        x1 = (srow["end"] - global_start) / 1e6
-        ax.axvline(x0, color='k', ls='--', alpha=0.5)
-        ax.axvline(x1, color='k', ls=':', alpha=0.5)
-        ax.text((x0+x1)/2, len(full_y_names), f"Step {int(srow['step'])}", ha='center', va='bottom', weight='bold')
-    # ---------------------------------------------------------
-    # 4. Axis / label formatting
-    # ---------------------------------------------------------
-    
-    # [Fix] Put Y tick labels at the center of each row lane
-    ax.set_yticks([i + 0.5 for i in range(len(full_y_names))]) 
+                        for _, gpu_row in relevant_gpu.iterrows():
+                            cpu_step = int(gpu_row.get("cpu_step", gpu_row["step"]))
+                            gpu_step = int(gpu_row.get("gpu_step", gpu_row["step"]))
+                            step_num = gpu_step if gpu_step != -1 else cpu_step
+
+                            bar_color = get_color(rank, step_num)  
+
+                            draw_bar_with_cpu_boundary(
+                                ax=ax,
+                                rel_start_ms=gpu_row["rel_start_ms"],
+                                dur_ms=gpu_row["dur_ms"],
+                                cpu_step=cpu_step,
+                                gpu_step=gpu_step,
+                                cpu_boundaries_ms=cpu_boundaries_ms,
+                                y_pos=current_y,
+                                lane_height=lane_height,
+                                rank_color=bar_color,
+                                alpha=1.0
+                            )
+
+                            # Step number label inside GPU span
+                            ax.text(
+                                x=gpu_row["rel_start_ms"] + gpu_row["dur_ms"] / 2,
+                                y=current_y + lane_height / 2,
+                                s=f"S{step_num}",
+                                ha='center',
+                                va='center',
+                                fontsize=7,
+                                fontweight='bold',
+                                color='white',
+                                clip_on=True
+                            )
+                            if color_by == "step":
+                                ax.text(
+                                    x=gpu_row["rel_start_ms"] + 1,
+                                    y=current_y + lane_height / 2,
+                                    s=f"R{rank}",
+                                    ha='left', va='center',
+                                    fontsize=6, fontweight='bold',
+                                    color='white', clip_on=True
+                                )
+
+
+    # Step boundary lines
+    for _, srow in target_stats.iterrows():
+        # CPU-based start line (dashed)
+        x_cpu_start = (srow["earliest_start"] - global_start) / 1e6
+        ax.axvline(x_cpu_start, color='k', ls='--', alpha=0.5)
+
+        # CPU-based end line (solid)
+        x_cpu_end = (srow["latest_end"] - global_start) / 1e6
+        ax.axvline(x_cpu_end, color='k', ls='solid', alpha=0.5)
+
+        # GPU-based end line (blue solid)
+        x_gpu_end = (srow["gpu_latest_end"] - global_start) / 1e6
+        ax.axvline(x_gpu_end, color='blue', ls='solid', alpha=0.3, linewidth=1.5)
+
+        # Step label
+        ax.text(
+            (x_cpu_start + x_cpu_end) / 2,
+            len(full_y_names),
+            f"Step {int(srow['step'])}",
+            ha='center', va='bottom', weight='bold'
+        )
+
+    # Axis settings
+    ax.set_xlim(0, global_end_ms)
+    ax.set_yticks([i + 0.5 for i in range(len(full_y_names))])
     ax.set_yticklabels(full_y_names, fontsize=11, fontweight='bold')
-    
-    # [Add] Row separators
-    # Draw a horizontal line at each integer boundary
+
     for i in range(len(full_y_names) + 1):
         ax.axhline(y=i, color='black', linewidth=1.0, alpha=0.5)
 
     ax.set_xlabel("Time (ms) relative to Global Step Start", fontsize=12)
-    
-    # --- [Add] Aggregate GPU info for the title ---
+    ax.set_ylim(0, len(full_y_names))
+
+    # GPU info title
     all_gpu_names = []
     for dataset in gpu_data_map.values():
         if dataset.gpu_info:
-            # DDP environment: 1 Rank = 1 GPU. Take one representative name per rank.
-            representative_name = next(iter(dataset.gpu_info.values()))
-            all_gpu_names.append(representative_name)
-            
-    
+            all_gpu_names.append(next(iter(dataset.gpu_info.values())))
+
     gpu_counts = Counter(all_gpu_names)
-
-    print(all_gpu_names)
-
-    if gpu_counts:
-        gpu_title_str = ", ".join([f"{name} ({count} GPUs)" for name, count in gpu_counts.items()])
-    else:
-        gpu_title_str = "Unknown GPU"
-        
-    # Update title with GPU info
+    gpu_title_str = ", ".join([f"{name} ({count} GPUs)" for name, count in gpu_counts.items()]) if gpu_counts else "Unknown GPU"
     ax.set_title(f"[{gpu_title_str}] Multi-GPU Detailed Timeline | Steps: {steps_to_plot}", fontsize=14, fontweight='bold')
-    # ----------------------------------------------
-    
-    # Keep vertical grid lines for time as dotted
-    ax.grid(True, axis='x', linestyle=':', alpha=0.5)
-    
-    # Disable default y-grid since we draw separators ourselves
-    ax.grid(False, axis='y') 
 
-    # Legend (Rank colors)
+    ax.grid(True, axis='x', linestyle=':', alpha=0.5)
+    ax.grid(False, axis='y')
+
+    # Legend
     legend_elements = []
     for r in sorted_ranks:
-        dataset = gpu_data_map[r]
-        
-        # 해당 Rank의 GPU 이름 1개 가져오기 (없으면 Unknown 처리)
-        if dataset.gpu_info:
-            gpu_name = next(iter(dataset.gpu_info.values()))
-        else:
-            gpu_name = "Unknown GPU"
-            
-        # "Rank 0 (NVIDIA A100-SXM4-80GB)" 형태로 라벨 생성
-        label_str = f'Rank {r} ({gpu_name})'
-        
-        # 범례 항목에 추가
-        legend_elements.append(Patch(facecolor=colors[r % len(colors)], label=label_str))
+        dataset  = gpu_data_map[r]
+        gpu_name = next(iter(dataset.gpu_info.values())) if dataset.gpu_info else "Unknown GPU"
+        legend_elements.append(Patch(facecolor=colors[r % len(colors)], label=f'Rank {r} ({gpu_name})'))
 
-    # 범례 박스 그리기
+    # CPU/GPU boundary legend entries
+    legend_elements.append(Patch(facecolor='none', edgecolor='black', label='CPU step boundary (solid line)'))
+    legend_elements.append(Patch(facecolor='none', edgecolor='red',   label='CPU/GPU step mismatch segment'))
+    legend_elements.append(Patch(facecolor='none', edgecolor='blue',  label='GPU step end (blue line)'))
+
     ax.legend(handles=legend_elements, loc='upper right', title="GPU Ranks", bbox_to_anchor=(1.05, 1))
-    # Limit Y range to remove extra blank space
-    ax.set_ylim(0, len(full_y_names))
 
     plt.tight_layout()
     plt.savefig(out_png, dpi=200)
     print(f"Saved timeline to {out_png}")
-    if show: 
+
+    if show:
         plt.show()
-    
+
 # ==============================================================================
 # 6. Main Execution
 # ==============================================================================
-def process_full_analysis(con: sqlite3.Connection, steps: List[int]) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """
-    Extract NVTX, NCCL, Memcpy, and 'True GPU Spans' from a single GPU (SQLite) file.
-    """
-    
-    # 1. Find schemas (auto-detect table names)
-    nvtx_sch = find_nvtx_schema(con)
-    k_sch = find_kernel_schema(con)
-    r_sch = find_runtime_schema(con)  # for True GPU Span calculation
-    m_sch = find_memcpy_schema(con)
-    s_sch = find_stringids_schema(con) # for NCCL name mapping
+def process_full_analysis(con: sqlite3.Connection,
+                          steps: List[int]
+                          ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
-    # -------------------------------------------------------
-    # A. Load basic data (NVTX, NCCL, Memcpy)
-    # -------------------------------------------------------
+    nvtx_sch = find_nvtx_schema(con)
+    k_sch    = find_kernel_schema(con)
+    r_sch    = find_runtime_schema(con)
+    m_sch    = find_memcpy_schema(con)
+    s_sch    = find_stringids_schema(con)
+
+    # Step 1: Load base data (no step column yet)
     df_nvtx = load_nvtx_events(con, nvtx_sch) if nvtx_sch else pd.DataFrame()
-    
+
     df_nccl = pd.DataFrame()
     if k_sch and s_sch:
         df_nccl = load_nccl_kernels(con, k_sch, s_sch)
-        
+
     df_memcpy = pd.DataFrame()
     if m_sch:
         df_memcpy = load_memcpy_events(con, m_sch, want_kinds=[1], name="HtoD")
 
-    # -------------------------------------------------------
-    # B. [Core] Compute True GPU Spans (Correlation ID matching)
-    # -------------------------------------------------------
     df_true_gpu = pd.DataFrame()
-    
-    # Run only when all required schemas exist and NVTX is not empty
+
+  
     if nvtx_sch and r_sch and k_sch and not df_nvtx.empty:
         try:
-            print("  -> Calculating True GPU Spans (Correlation ID matching)...")
-            
-            # 1. Load Runtime API calls inside NVTX time span
-            df_runtime = load_runtime_events_in_nvtx(con, df_nvtx, r_sch)
-            
-            # 2. Load all kernels (for mapping)
-            df_kernels_all = load_all_kernels_for_span(con, k_sch)
-            
-            # 3. Build mapping (NVTX -> Runtime -> CorrelationId)
-            df_mapping = map_nvtx_to_runtime(df_nvtx, df_runtime)
-            
-            # 4. Final computation (CorrelationId -> Kernel Time)
-            df_true_gpu = compute_true_gpu_spans(df_mapping, df_kernels_all)
-            
-            print(f"  -> Found {len(df_true_gpu)} true GPU spans.")
-            
+            #print("  -> Calculating True GPU Spans...")
+
+            # Step 2: Build CPU-based step_df
+            cpu_step_df = build_step_df_from_nvtx(df_nvtx)
+            #print(f"  -> CPU step_df:\n{cpu_step_df.to_string()}")
+
+            df_runtime     = load_runtime_events_in_nvtx(con, df_nvtx, r_sch)
+            df_kernels_all = load_all_kernels_for_span(con, k_sch, s_sch=s_sch)
+            df_mapping     = map_nvtx_to_runtime(df_nvtx, df_runtime)
+
+            # Step 3: Compute true_gpu_df using cpu_step_df (bug fix)
+            df_true_gpu = compute_true_gpu_spans(df_mapping, df_kernels_all, step_df=cpu_step_df)
+            #print(f"  -> Found {len(df_true_gpu)} true GPU spans.")
+
+            # Step 4: Extract GPU-based step_df
+            if df_true_gpu.empty:
+                raise ValueError("true_gpu_df is empty")
+
+            gpu_batch_rows = df_true_gpu[
+                df_true_gpu["name"].str.contains(r"\[GPU\] Batch", regex=True)
+            ]
+
+            if gpu_batch_rows.empty:
+                raise ValueError("No [GPU] Batch_N rows found -> check NVTX markers for Batch_N")
+
+            gpu_step_df = pd.DataFrame({
+                "step":  gpu_batch_rows["cpu_step"].values,
+                "start": gpu_batch_rows["start"].values,
+                "end":   gpu_batch_rows["end"].values
+            }).sort_values("step").reset_index(drop=True)
+
+            #print(f"  -> GPU step_df:\n{gpu_step_df.to_string()}")
+
+            # Step 5: Define assign functions
+            def assign_cpu_step(event_start):
+                for _, row in cpu_step_df.iterrows():
+                    if row["start"] <= event_start < row["end"]:
+                        return int(row["step"])
+                return -1
+
+            def assign_gpu_step(event_start):
+                for _, row in gpu_step_df.iterrows():
+                    if row["start"] <= event_start < row["end"]:
+                        return int(row["step"])
+                return -1
+
+            # Step 6: Add cpu_step and gpu_step to all DataFrames
+            if not df_nvtx.empty:
+                df_nvtx["cpu_step"] = df_nvtx["start"].apply(assign_cpu_step)
+                df_nvtx["gpu_step"] = df_nvtx["start"].apply(assign_gpu_step)
+                #print(f"  -> df_nvtx cpu_step=-1: {(df_nvtx['cpu_step']==-1).sum()} rows")
+                #print(f"  -> df_nvtx gpu_step=-1: {(df_nvtx['gpu_step']==-1).sum()} rows")
+
+            if not df_nccl.empty:
+                df_nccl["cpu_step"] = df_nccl["start"].apply(assign_cpu_step)
+                df_nccl["gpu_step"] = df_nccl["start"].apply(assign_gpu_step)
+                #print(f"  -> df_nccl cpu_step=-1: {(df_nccl['cpu_step']==-1).sum()} rows")
+                #print(f"  -> df_nccl gpu_step=-1: {(df_nccl['gpu_step']==-1).sum()} rows")
+
+            if not df_memcpy.empty:
+                df_memcpy["cpu_step"] = df_memcpy["start"].apply(assign_cpu_step)
+                df_memcpy["gpu_step"] = df_memcpy["start"].apply(assign_gpu_step)
+                #print(f"  -> df_memcpy cpu_step=-1: {(df_memcpy['cpu_step']==-1).sum()} rows")
+                #print(f"  -> df_memcpy gpu_step=-1: {(df_memcpy['gpu_step']==-1).sum()} rows")
+
         except Exception as e:
-            print(f"  [Warning] Failed to compute True GPU Spans: {e}")
-            # Even if it fails, we still return other data
+            print(f"  [Warning] Failed: {e}")
+            import traceback
+            traceback.print_exc()
+
 
     return df_nvtx, df_nccl, df_memcpy, df_true_gpu
 
-if __name__ == "__main__":
-    # Usage: python analyze_multi.py <step1> <step2> ... <rank0.sqlite> <rank1.sqlite> ...
-    # Order does not matter; we separate by extension and digits.
-    if len(sys.argv) < 3:
-        print("Usage: python analyze_multi.py <step_N> <file1.sqlite> [file2.sqlite ...]")
-        sys.exit(1)
 
-    # 1. Parse args (split SQLite files and step numbers)
-    sqlite_files = []
+# if __name__ == "__main__":
+#     # Usage: python analyze_multi.py <step1> <step2> ... <rank0.sqlite> <rank1.sqlite> ...
+#     # Order does not matter; we separate by extension and digits.
+#     if len(sys.argv) < 3:
+#         print("Usage: python analyze_multi.py <step_N> <file1.sqlite> [file2.sqlite ...]")
+#         sys.exit(1)
+#     # 1. Parse args (split SQLite files and step numbers)
+#     sqlite_files = []
+#     target_steps = []
+#     for arg in sys.argv[1:]:
+#         if arg.endswith(".sqlite") or arg.endswith(".sqlite3"):
+#             sqlite_files.append(arg)
+#         elif arg.isdigit():
+#             target_steps.append(int(arg))
+    
+
+
+if __name__ == "__main__":
+
     target_steps = []
 
-    for arg in sys.argv[1:]:
-        if arg.endswith(".sqlite") or arg.endswith(".sqlite3"):
-            sqlite_files.append(arg)
+    sqlite_dir = "."
+
+    args = sys.argv[1:]
+    for i, arg in enumerate(args):
+        if arg == "--dir" and i + 1 < len(args):
+            sqlite_dir = args[i + 1]
         elif arg.isdigit():
             target_steps.append(int(arg))
-    
-    if not sqlite_files:
-        print("[Error] No SQLite files provided.")
-        sys.exit(1)
-        
-    if not target_steps:
-        print("[Warning] No steps specified. Defaulting to first detected step.")
-        # You can set a default here if needed
 
-    print(f"--- Configuration ---")
+    # Detect all sqlite files in the target directory
+    all_files = sorted(glob.glob(os.path.join(sqlite_dir, "*.sqlite")))
+    if not all_files:
+        print(f"[Error] No .sqlite files found in '{sqlite_dir}'")
+        sys.exit(1)
+
+    # Group files by common prefix (strip rank number)
+    # e.g. profile_bs128_rank0, profile_bs128_rank1 -> group "profile_bs128"
+    from collections import defaultdict
+    import re
+
+    groups = defaultdict(list)
+    for f in all_files:
+        basename = os.path.basename(f)
+        # Remove rank suffix to generate group key
+        group_key = re.sub(r'_?rank\d+', '', basename).replace('.sqlite', '')
+        groups[group_key].append(f)
+
+    # Print available groups
+    group_keys = sorted(groups.keys())
+    print("\nAvailable experiment groups:")
+    for i, key in enumerate(group_keys):
+        files = groups[key]
+        print(f"  [{i}] {key}  ({len(files)} ranks)")
+        for f in sorted(files):
+            print(f"       - {os.path.basename(f)}")
+
+    # Prompt user to select a group
+    print()
+    choice = input("Select group number: ").strip()
+    try:
+        idx = int(choice)
+        selected_key = group_keys[idx]
+    except (ValueError, IndexError):
+        print("[Error] Invalid input.")
+        sys.exit(1)
+
+    sqlite_files = sorted(groups[selected_key])
+
+    
+    # Prompt for step numbers if not provided via command line
+    if not target_steps:
+        step_input = input("Enter step numbers to plot (e.g. 2 3 4): ").strip()
+        target_steps = [int(s) for s in step_input.split() if s.isdigit()]
+
+    # Fall back to default steps if still empty
+    if not target_steps:
+        target_steps = [1, 2, 3]
+
+    print(f"\n--- Configuration ---")
+    print(f"Selected experiment: {selected_key}")
     print(f"Target Steps: {target_steps}")
     print(f"Files ({len(sqlite_files)}):")
     for f in sqlite_files:
         print(f"  - {f}")
     print("---------------------\n")
 
-    # 2. Load multi-GPU data
     gpu_data_map = {} # { rank: GpuDataset }
 
     for i, filepath in enumerate(sqlite_files):
@@ -1211,6 +1722,7 @@ if __name__ == "__main__":
         # Load single GPU dataset (using load_single_gpu defined earlier)
         dataset = load_single_gpu(filepath, rank, target_steps)
         
+        
         if dataset:
             gpu_data_map[rank] = dataset
             
@@ -1220,14 +1732,19 @@ if __name__ == "__main__":
     if not gpu_data_map:
         print("[Fatal Error] No valid GPU data loaded. Exiting.")
         sys.exit(1)
-
+        
     try:
         # 3. Step synchronization (Time Alignment)
         # Extract step intervals for each GPU
+        offsets = calculate_clock_offsets(
+            gpu_data_map,
+            n_kernels=20
+        )
+
         all_steps_map = get_all_step_intervals(gpu_data_map)
         
         # Build global step table (Earliest Start / Latest End)
-        final_df = get_global_earliest_steps(all_steps_map)
+        final_df = get_global_earliest_steps(all_steps_map, gpu_data_map)
         
         if final_df.empty:
             print("[Error] Could not calculate global step intervals. Check if NVTX markers exist.")
@@ -1236,9 +1753,22 @@ if __name__ == "__main__":
         print("\n--- Global Step Statistics ---")
         print(final_df.to_string(index=False))
         print("------------------------------\n")
-
         # 4. Plot the combined timeline (Plotting)
-        output_filename = f"timeline_steps_resnet50{'_'.join(map(str, target_steps))}.png"
+        
+
+
+        for rank, dataset in gpu_data_map.items():
+            dw = dataset.nvtx_df[
+                dataset.nvtx_df["name"].str.contains("data_wait", case=False)
+            ][["name", "start", "end", "dur_ns", "cpu_step"]].head(5)
+            print(f"\nRank {rank} data_wait:")
+            print(dw.to_string())
+
+        output_filename = f"timeline_{selected_key}_steps{'_'.join(map(str, target_steps))}.png"
+        
+        for rank, dataset in gpu_data_map.items():
+            print(f"\nRank {rank} true_gpu_df gpu_step distribution:")
+            print(dataset.true_gpu_df[["name", "gpu_step"]].value_counts())
         
         plot_timeline_custom_axis(
             gpu_data_map=gpu_data_map,
@@ -1246,11 +1776,25 @@ if __name__ == "__main__":
             all_steps_map=all_steps_map,
             steps_to_plot=target_steps,
             out_png=output_filename,
-            show=True  # set False on headless servers
+            show=True,
+            color_by="step", # set False on headless servers
+            offsets=offsets 
         )
+        # for rank, dataset in gpu_data_map.items():
+        #     fwd = dataset.nvtx_df[
+        #         dataset.nvtx_df["name"].str.contains("forward", case=False)
+        #     ][["name", "start", "end", "dur_ns", "cpu_step"]].head(5)
+        #     print(f"\nRank {rank} CPU forward NVTX:")
+        #     print(fwd.to_string())
+        for rank, dataset in gpu_data_map.items():
+
+            bwd = dataset.true_gpu_df[
+                dataset.true_gpu_df["name"].str.contains("backward", case=False)
+            ][["name", "start", "end", "cpu_step", "gpu_step"]]
+            print(f"\nRank {rank} backward GPU kernels:")
+            print(bwd.to_string())
         
         print("\n[Success] Analysis and Visualization completed successfully.")
-
     except Exception as e:
         import traceback
         traceback.print_exc()
