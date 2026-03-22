@@ -19,11 +19,11 @@ class MemRecord:
     max_reserved: int
 
     #nccl
-    nccl_buffer_B:    int   # NCCL이 잡아먹는 버퍼 크기
-    bytes_sent_B:     int   # 이 스텝에서 보낸 bytes
-    bytes_recv_B:     int   # 이 스텝에서 받은 bytes
-    comm_duration_ns: int   # 통신에 걸린 시간 (나노초)
-    comm_mem_delta_B: int   # 통신 중 메모리 증가량
+    nccl_buffer_B:    int   
+    bytes_sent_B:     int   
+    bytes_recv_B:     int   
+    comm_duration_ns: int   
+    comm_mem_delta_B: int  
 
 
 
@@ -43,9 +43,7 @@ class MemoryLogger:
             self.out_csv = out_csv
 
 
-        # ── Rank 정보 자동 감지 ──
-        # dist가 초기화됐으면 rank 자동으로 가져옴
-        # 초기화 안 됐으면 단일 GPU로 간주 (rank=0)
+
         if dist.is_available() and dist.is_initialized():
             self.rank       = dist.get_rank()
             self.world_size = dist.get_world_size()
@@ -53,12 +51,12 @@ class MemoryLogger:
             self.rank       = 0
             self.world_size = 1
         
-        self._bytes_sent_B     = 0   # 이 스텝에서 보낸 bytes 누적
-        self._bytes_recv_B     = 0   # 이 스텝에서 받은 bytes 누적
-        self._comm_duration_ns = 0   # 통신 시간 누적
-        self._comm_mem_delta_B = 0   # 통신 중 메모리 변화 누적
-        self._comm_start_t     = 0   # 통신 시작 시각 (임시)
-        self._comm_mem_before  = 0   # 통신 직전 메모리 (임시)
+        self._bytes_sent_B     = 0   
+        self._bytes_recv_B     = 0   
+        self._comm_duration_ns = 0   
+        self._comm_mem_delta_B = 0
+        self._comm_start_t     = 0  
+        self._comm_mem_before  = 0   
 
     def _now(self) -> int:
 
@@ -70,7 +68,6 @@ class MemoryLogger:
         if self.device.type == "cuda":
             torch.cuda.reset_peak_memory_stats(self.device)
         
-        # 통신 카운터도 스텝마다 초기화
         self._bytes_sent_B     = 0
         self._bytes_recv_B     = 0
         self._comm_duration_ns = 0
@@ -78,43 +75,26 @@ class MemoryLogger:
     
 
     def _get_nccl_buffer(self) -> int:
-        """
-        NCCL 버퍼 크기 추정
-
-        NCCL 버퍼는 VRAM 안에 잡히는데
-        PyTorch가 직접 크기를 알려주지 않음
-        → memory_stats()의 세부 항목으로 추정
-        """
 
         try:
             stats     = torch.cuda.memory_stats(self.device)
-            # active_bytes = 실제로 활성화된 메모리 블록들의 합
-            # allocated와 미묘하게 다름 (정렬 패딩 등 포함)
+
             active    = stats.get("active_bytes.all.current", 0)
             allocated = torch.cuda.memory_allocated(self.device)
-            # 그 차이가 NCCL 버퍼 + 내부 패딩의 추정치
+
             return max(0, active - allocated)
         except Exception:
             return 0
 
     def mark_comm_start(self):
-        """
-        AllReduce 등 통신 시작 직전에 호출
-        → 통신 시작 시각, 메모리 기록
-        """
+
         if self.device.type != "cuda":
             return
         self._comm_start_t    = self._now()
         self._comm_mem_before = torch.cuda.memory_allocated(self.device)
     
     def mark_comm_end(self, param_bytes: int = 0):
-        """
-        AllReduce 등 통신 완료 직후에 호출
-        param_bytes: 통신한 파라미터의 총 bytes 크기
 
-        DDP AllReduce는 그래디언트를 보내고(sent) 받음(recv)
-        → 같은 크기가 sent, recv 양쪽에 기록됨
-        """
         if self.device.type != "cuda":
             return
 
@@ -124,24 +104,17 @@ class MemoryLogger:
         self._comm_duration_ns += duration
         self._comm_mem_delta_B += max(0, mem_after - self._comm_mem_before)
         self._bytes_sent_B     += param_bytes
-        self._bytes_recv_B     += param_bytes  # AllReduce는 보내고 받음
+        self._bytes_recv_B     += param_bytes  
 
     def register_ddp_hooks(self, model: torch.nn.Module):
-        """
-        DDP 모델의 그래디언트 훅 등록
-        → AllReduce 자동 감지
 
-        사용법:
-          model = DDP(model)
-          logger.register_ddp_hooks(model)
-        """
-        logger_ref = self   # 클로저용 참조
+        logger_ref = self   
 
         def make_hook(param: torch.Tensor):
 
             def hook(grad: torch.Tensor):
 
-                # 그래디언트가 AllReduce되는 순간 호출됨
+                
                 byte_size = grad.numel() * grad.element_size()
                 logger_ref._bytes_sent_B += byte_size
                 logger_ref._bytes_recv_B += byte_size
@@ -156,8 +129,7 @@ class MemoryLogger:
                 param.register_hook(make_hook(param))
                 hooked += 1
 
-        print(f"[MemoryLogger] Rank {self.rank}: "
-              f"{hooked}개 파라미터에 통신 훅 등록 완료")
+
 
     def mark(self, step: int, tag: str):
 
@@ -207,7 +179,7 @@ class MemoryLogger:
         with open(out_path, "w", newline="") as f:
             w = csv.writer(f)
             w.writerow([
-                 # 기존 컬럼들
+               
                 "timestamp_ns",
                 "elapsed_ms",
                 "step", "tag", "rank",
@@ -217,7 +189,7 @@ class MemoryLogger:
                 #memory_MB
                 "allocated_MB",    "reserved_MB",
                 "max_allocated_MB","max_reserved_MB",
-                # 통신 관련 새 컬럼들
+
                 "nccl_buffer_B",   "nccl_buffer_MB",
                 "bytes_sent_B",    "bytes_sent_MB",
                 "bytes_recv_B",    "bytes_recv_MB",
