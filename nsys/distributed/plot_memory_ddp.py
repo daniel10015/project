@@ -68,7 +68,7 @@ def load_data_from_csv(csv_path):
 
     df["slack_plot"] = (df["reserved_plot"] - df["allocated_plot"]).clip(lower=0)
 
-    # ── NCCL / 통신 컬럼 ─────────────────────────
+
     nccl_col       = pick_col(df, ["nccl_buffer_MB",    "nccl_buffer_B"])
     sent_col       = pick_col(df, ["bytes_sent_MB",     "bytes_sent_B"])
     recv_col       = pick_col(df, ["bytes_recv_MB",     "bytes_recv_B"])
@@ -108,7 +108,7 @@ def plot_memory_per_steps(rank_dfs: dict, out_path="memory.png"):
         set().union(*[p.index.tolist() for p in step_peak.values()])
     )
 
-    fig, axes = plt.subplots(3, 1, figsize=(16, 15))  # ✅ 3개로 분리
+    fig, axes = plt.subplots(3, 1, figsize=(16, 15))  
     fig.suptitle("Memory Usage - Multi-GPU",
                  fontsize=13, fontweight="bold")
 
@@ -123,15 +123,15 @@ def plot_memory_per_steps(rank_dfs: dict, out_path="memory.png"):
     ax.set_ylabel("Memory (MB)")
     ax.set_title("Allocated + NCCL buffer (per rank)")
     ax.legend(fontsize=8, loc="upper right")
-    ax.set_xticks(all_steps[::5])   # 5스텝마다 표시
+    ax.set_xticks(all_steps[::5])   
     ax.grid(axis="y", alpha=0.3)
-    # ✅ Y축 범위를 allocated 값 기준으로 좁힘
+
     all_peaks = pd.DataFrame(step_peak)
     ymin = all_peaks.min().min() * 0.99
     ymax = all_peaks.max().max() * 1.01
     ax.set_ylim(ymin, ymax)
 
-    # ── 서브플롯 2: reserved만 (rank별 겹치기) + slack 면적 ──
+
     ax = axes[1]
     for rank in step_peak.keys():
         color  = RANK_COLORS[rank % len(RANK_COLORS)]
@@ -153,7 +153,7 @@ def plot_memory_per_steps(rank_dfs: dict, out_path="memory.png"):
     ax.set_xticks(all_steps[::5])
     ax.grid(axis="y", alpha=0.3)
 
-    # ── 서브플롯 3: 병렬화 불균형 밴드 ──
+
     ax = axes[2]
     peak_df   = pd.DataFrame(step_peak).reindex(all_steps)
     mean      = peak_df.mean(axis=1)
@@ -179,7 +179,6 @@ def plot_memory_per_steps(rank_dfs: dict, out_path="memory.png"):
             color="#e74c3c", linewidth=1,
             linestyle="--", alpha=0.7, label="max rank")
 
-    # ✅ Y축 범위를 차이값 기준으로 좁힘
     margin = max(diff.max() * 0.5, 1.0)
     ax.set_ylim(mean.min() - margin, mean.max() + margin)
 
@@ -260,13 +259,13 @@ if __name__ == "__main__":
     print("---------------------\n")
 
 
-    # ── CSV 로드 ───────────────────────────────────
-    rank_dfs = {}   # ✅ list → dict
+
+    rank_dfs = {}   
 
     for i, filepath in enumerate(csv_files):
         print(f"[로드 {i}] {filepath}")
         df   = load_data_from_csv(filepath)
-        rank = df["rank"].iloc[0]   # CSV에서 rank 번호 읽기
+        rank = df["rank"].iloc[0]   
         rank_dfs[rank] = df
         print(f"  → rank {rank} | {len(df)}개 레코드")
 
