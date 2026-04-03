@@ -30,7 +30,7 @@ export NCCL_DEBUG=INFO
 export NCCL_DEBUG_SUBSYS=INIT,GRAPH,NET
 export NCCL_DEBUG_FILE=/home/hson17/nsys/distributed/nccl_log/nccl_rank%q{SLURM_PROCID}.log
 
-BATCH_SIZE=500
+BATCH_SIZE=200
 IMAGE_SIZE=224
 MAX_BATCHES=50
 

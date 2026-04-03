@@ -31,7 +31,6 @@ def try_read_df(con: sqlite3.Connection, query: str) -> pd.DataFrame:
     # Run the SQL query and return the result as a pandas DataFrame.
     return pd.read_sql_query(query, con)
 
-
 def get_all_gpus(con: sqlite3.Connection) -> Dict[int, str]:
     """Fetches all GPUs and their names from the TARGET_INFO_GPU table."""
     gpu_map = {}
@@ -49,8 +48,6 @@ def get_all_gpus(con: sqlite3.Connection) -> Dict[int, str]:
         print(f"  [Error] Failed to read GPU Info Table: {e}")
         
     return gpu_map
-
-
 
 # ==============================================================================
 # 2. Schemas & Finders (Runtime, NVTX, Kernel, etc.)
@@ -399,10 +396,11 @@ def load_nvtx_events(con: sqlite3.Connection, sch: NvtxSchema) -> pd.DataFrame:
     df["dur_ns"] = df["end"] - df["start"]
     return df
 
-def load_nccl_kernels(con: sqlite3.Connection,
-                      k_sch: KernelSchema,
-                      s_sch: StringIdsSchema,
-                      like_pattern: str = "%nccl%") -> pd.DataFrame:
+def load_nccl_kernels(
+    con: sqlite3.Connection,
+    k_sch: KernelSchema,
+    s_sch: StringIdsSchema,
+    like_pattern: str = "%nccl%") -> pd.DataFrame:
     """
     Loads kernel events that match a specific pattern (e.g., '%nccl%').
     Joins the Kernel table with the StringIds table to get human-readable names.
@@ -422,14 +420,11 @@ def load_nccl_kernels(con: sqlite3.Connection,
     df["dur_ns"] = df["end"] - df["start"]
     return df
 
-
-
 def load_memcpy_events(
     con: sqlite3.Connection,
     sch: MemcpySchema,
     want_kinds: Optional[List[int]] = None,
-    name: str = "gpu_memcpy_h2d"
-) -> pd.DataFrame:
+    name: str = "gpu_memcpy_h2d") -> pd.DataFrame:
 
     select_cols = [
         f"{sch.start_col} AS start",
@@ -576,6 +571,7 @@ def compute_true_gpu_spans(
     result["name"] = result["nvtx_name"].apply(lambda x: f"[GPU] {x}")
     return result[["name", "start", "end", "dur_ns"]]
 
+
 # ==============================================================================
 # 5. Plotting Logic
 # ==============================================================================
@@ -624,8 +620,10 @@ def build_step_df_from_nvtx(nvtx_df: pd.DataFrame) -> pd.DataFrame:
 
     return step_df[["step", "start", "end"]]
 
-
-def filter_by_step_ranges(source_df: pd.DataFrame, step_df_sel: pd.DataFrame, global_start: int) -> pd.DataFrame:
+def filter_by_step_ranges(
+    source_df: pd.DataFrame, 
+    step_df_sel: pd.DataFrame, 
+    global_start: int) -> pd.DataFrame:
     """
     Filters events that fall within the selected step time ranges.
     Also calculates relative start time (ms) for plotting.
@@ -670,8 +668,7 @@ def plot_timeline_custom_axis(
     all_steps_map: Dict[int, pd.DataFrame],
     steps_to_plot: List[int],
     out_png="timeline_custom_axis.png", 
-    show=True
-):
+    show=True):
     print(f"Plotting steps: {steps_to_plot} with Custom Y-Axis...")
 
     # ---------------------------------------------------------
@@ -993,6 +990,175 @@ def plot_timeline_custom_axis(
     print(f"Saved timeline to {out_png}")
     if show: 
         plt.show()
+
+def compute_pure_wait_time(
+    nvtx_df: pd.DataFrame, 
+    nccl_df: pd.DataFrame) -> pd.DataFrame:
+
+    results = []
+    prev_t4 = 0  # 이전 bucket AllReduce 끝난 시각
+
+    # NVTX에서 NCCL_AllReduce range만 추출
+    nvtx_nccl_df = nvtx_df[
+        nvtx_df["name"] == "NCCL_AllReduce"
+    ].sort_values("start").reset_index(drop=True)
+
+    # NCCL 커널에서 AllReduce만 추출
+    nccl_allreduce_df = nccl_df[
+        nccl_df["name"].str.contains("AllReduce", case=False)
+    ].sort_values("start").reset_index(drop=True)
+
+    n_nvtx   = len(nvtx_nccl_df)
+    n_kernel = len(nccl_allreduce_df)
+    print(f"NVTX ranges:       {n_nvtx}")
+    print(f"AllReduce kernels: {n_kernel}")
+
+    if n_nvtx != n_kernel:
+        print(f"[WARNING] 개수 불일치: NVTX={n_nvtx}, kernel={n_kernel}")
+        print("  → min 개수로 매핑합니다")
+
+    results = []
+    prev_t4 = 0  # 이전 bucket AllReduce 끝난 시각
+
+    for i in range(min(n_nvtx, n_kernel)):
+        t1        = nvtx_nccl_df.iloc[i]["start"]   # bucket ready 시각
+        t3        = nccl_allreduce_df.iloc[i]["start"]  # 실제 커널 시작
+        t4_kernel = nccl_allreduce_df.iloc[i]["end"]    # 실제 커널 완료
+
+        # 이전 bucket이 끝난 시각 고려
+        # "내가 실제로 시작 가능해진 시각" = max(내가 준비된 시각, 이전 bucket 끝난 시각)
+        earliest_possible = max(t1, prev_t4)
+
+        # 원인 A: 이전 bucket 기다린 시간 (NCCL 스트림 큐 대기)
+        cause_a_ns = max(0, prev_t4 - t1)
+
+        # 원인 B: 다른 rank 기다린 시간 (진짜 wait time)
+        pure_wait_ns = max(0, t3 - earliest_possible)
+
+        results.append({
+            "bucket_idx":   i,
+            "t1_ms":        t1        / 1e6,
+            "t3_ms":        t3        / 1e6,
+            "t4_ms":        t4_kernel / 1e6,
+            "prev_t4_ms":   prev_t4   / 1e6,
+            "cause_a_ms":   cause_a_ns   / 1e6,
+            "pure_wait_ms": pure_wait_ns / 1e6,
+            "comm_ms":      (t4_kernel - t3) / 1e6,
+            "total_ms":     (t4_kernel - t1) / 1e6,
+        })
+
+        prev_t4 = t4_kernel
+
+    return pd.DataFrame(results)
+
+def load_all_gpu_compute_wait_time(
+    gpu_data_map: Dict[int, GpuDataset]
+) -> pd.DataFrame:
+    
+    all_results = []
+    
+    for rank, gpu_data in gpu_data_map.items():
+        
+        rank_wait_df = compute_pure_wait_time(
+            nvtx_df = gpu_data.nvtx_df,
+            nccl_df = gpu_data.nccl_df,
+        )
+        
+        if rank_wait_df.empty:
+            print(f"[WARNING] Rank {rank}: wait time 데이터 없음")
+            continue
+    
+        step_ranges = gpu_data.true_gpu_df[
+            gpu_data.true_gpu_df["name"].str.contains(
+                r"\[GPU\].*Batch", regex=True
+            )
+        ][["cpu_step", "start", "end"]].drop_duplicates("cpu_step")
+        
+        def assign_step(t1_ms):
+            t1_ns = t1_ms * 1e6
+            match = step_ranges[
+                (step_ranges["start"] <= t1_ns) &
+                (step_ranges["end"]   >= t1_ns)
+            ]
+            if not match.empty:
+                return int(match.iloc[0]["cpu_step"])
+            return -1
+
+        rank_wait_df["step"] = rank_wait_df["t1_ms"].apply(assign_step)
+        rank_wait_df["rank"] = rank
+
+        # step=-1 경고
+        missing = rank_wait_df[rank_wait_df["step"] == -1]
+        if not missing.empty:
+            print(f"[WARNING] Rank {rank}: {len(missing)}개 bucket step 배정 실패")
+
+        all_results.append(rank_wait_df)
+
+    if not all_results:
+        return pd.DataFrame()
+
+    return pd.concat(all_results, ignore_index=True)
+
+def plot_wait_time_per_step(
+    wait_df: pd.DataFrame,
+    output_path: str = "level1_wait_time.png"
+) -> None:
+
+    df = wait_df[wait_df["step"] != -1].copy()  # step 배정 실패 제외
+    if df.empty:
+        print("[WARNING] 데이터 없음")
+        return
+
+    # step별, rank별 pure_wait 합산
+    grouped = (df.groupby(["step", "rank"])["pure_wait_ms"]
+                 .sum()
+                 .reset_index())
+
+    target_steps = sorted(grouped["step"].unique())
+    ranks        = sorted(grouped["rank"].unique())
+    n_ranks      = len(ranks)
+    x            = np.arange(len(target_steps))
+    bar_width    = 0.7 / n_ranks
+    colors       = ["#D85A30", "#BA7517", "#1D9E75", "#378ADD"]
+
+    fig, ax = plt.subplots(figsize=(max(10, len(target_steps) * 0.8), 5))
+    fig.patch.set_facecolor("#FAFAF8")
+    ax.set_facecolor("#F5F4EF")
+
+    for ri, rank in enumerate(ranks):
+        rank_data = grouped[grouped["rank"] == rank]
+        waits = [
+            rank_data[rank_data["step"] == s]["pure_wait_ms"].values[0]
+            if not rank_data[rank_data["step"] == s].empty else 0
+            for s in target_steps
+        ]
+        offset = (ri - n_ranks / 2 + 0.5) * bar_width
+        ax.bar(x + offset, waits, bar_width * 0.85,
+               label=f"Rank {rank}",
+               color=colors[ri % len(colors)],
+               alpha=0.85)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"Step {s}" for s in target_steps],
+                       fontsize=9, rotation=45, ha="right")
+    ax.set_ylabel("Wait time (ms)", fontsize=10)
+    ax.set_title(
+        "Level 1 — Wait time per rank (all steps)\n"
+        "낮을수록 느린 rank (straggler)   높을수록 기다린 rank (victim)",
+        fontsize=11, fontweight="bold"
+    )
+    ax.legend(fontsize=9, loc="upper right")
+    ax.grid(axis="y", alpha=0.3, linestyle="--")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150,
+                bbox_inches="tight",
+                facecolor=fig.get_facecolor())
+    print(f"저장 완료: {output_path}")
+    plt.close()
+
     
 # ==============================================================================
 # 6. Main Execution
@@ -1122,16 +1288,26 @@ if __name__ == "__main__":
         print("------------------------------\n")
 
         # 4. Plot the combined timeline (Plotting)
-        output_filename = f"timeline_steps_resnet50{'_'.join(map(str, target_steps))}.png"
+        #output_filename = f"timeline_steps_resnet50{'_'.join(map(str, target_steps))}.png"
         
-        plot_timeline_custom_axis(
-            gpu_data_map=gpu_data_map,
-            final_df=final_df,
-            all_steps_map=all_steps_map,
-            steps_to_plot=target_steps,
-            out_png=output_filename,
-            show=True  # set False on headless servers
+        # plot_timeline_custom_axis(
+        #     gpu_data_map=gpu_data_map,
+        #     final_df=final_df,
+        #     all_steps_map=all_steps_map,
+        #     steps_to_plot=target_steps,
+        #     out_png=output_filename,
+        #     show=True  # set False on headless servers
+        # )
+        output_filename = (
+            f"level1_wait_time"
+            f"_ranks{'_'.join(str(r) for r in sorted(gpu_data_map.keys()))}"
+            f".png"
         )
+        plot_wait_time_per_step(
+            wait_df=wait_df,
+            output_path=output_filename
+        )
+        print(f"Level 1 그래프 저장: {output_filename}")
         
         print("\n[Success] Analysis and Visualization completed successfully.")
 

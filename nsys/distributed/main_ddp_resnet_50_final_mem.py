@@ -176,6 +176,9 @@ def train_one_epoch(model, loader, optimizer, loss_fn, local_rank, memlog, max_b
             
 
 def nvtx_comm_hook(state, bucket):
+
+    mem_before = torch.cuda.memory_allocated()
+    print(f"hook called: mem={mem_before/1e6:.1f}MB")
     # This labels the actual communication chunks in NVTX
     nvtx.range_push("NCCL_AllReduce")
     
@@ -183,6 +186,8 @@ def nvtx_comm_hook(state, bucket):
     fut = dist.all_reduce(bucket.buffer(), async_op=True).get_future()
     
     def callback(fut):
+        mem_after = torch.cuda.memory_allocated()
+        print(f"callback: mem={mem_after/1e6:.1f}MB  delta={( mem_after-mem_before)/1e6:.1f}MB")
         nvtx.range_pop() # Pop when communication is done
         return fut.value()[0]
     

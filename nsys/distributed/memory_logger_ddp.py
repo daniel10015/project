@@ -198,7 +198,7 @@ class MemoryLogger:
             ])
 
             for r in self.rows:
-                elapsed_ms = (r.timestamp_n - self.t0) / 1e6
+                elapsed_ms = (r.timestamp_ns - self.t0) / 1e6
                 w.writerow([
                     r.timestamp_ns, elapsed_ms, r.step, r.tag, r.rank,
                     r.allocated,     r.reserved,
