@@ -25,7 +25,6 @@ myenv
 *.pyc
 
 # Experiments
-nsys/
 experiments/ddp/
 experiments/thru_com/
 
