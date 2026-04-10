@@ -1,7 +1,7 @@
 
 from time import perf_counter, perf_counter_ns, time
 from enum import Enum, unique, auto
-from cupti import cupti
+# from cupti import cupti
 from torch import distributed as dist
 from torch.cuda import nvtx
 from .metric_callback import metric_callback
@@ -16,7 +16,7 @@ class Metric(Enum):
     GPU_MEM_COPY = auto()
 """
 
-class ProfiledModel():
+class ProfileModel():
     def __init__(self, model, local_rank, global_rank): # metrics: tuple[str, ...]):
         self.model = model
         self.local_rank = local_rank
@@ -34,8 +34,8 @@ class ProfiledModel():
                 data, label = next(iterator)
 
             with nvtx.range("h2d"):
-                data = data.to(self.local_rank, non_blocking=True)
-                label = label.to(self.local_rank, non_blocking=True)
+                data = data.to(self.local_rank, non_blocking=False)
+                label = label.to(self.local_rank, non_blocking=False)
 
             with nvtx.range("gpu_compute"):
                 with nvtx.range("zero_grad"):
@@ -65,7 +65,7 @@ class ProfiledModel():
     def __call__(self, *args):
         return self.forward(*args)
 
-
+'''
 class profiler():
     
     def cupti_func_buffer_requested(self):
@@ -115,3 +115,5 @@ class profiler():
 
     def spill(self):
         return self.profile_out
+    
+'''
