@@ -1,5 +1,7 @@
+import argparse
 import sys
 import sqlite3
+import json
 from dataclasses import dataclass
 from typing import List, Optional, Dict, Tuple
 from collections import Counter
@@ -9,6 +11,7 @@ import matplotlib.pyplot as plt
 import re
 import os
 from matplotlib.patches import Patch
+from matplotlib.colors import to_rgba
 import glob
 # ==============================================================================
 # 1. Generic SQLite Helpers
@@ -1106,16 +1109,365 @@ def draw_bar_with_cpu_boundary(
               colors='red', linewidth=2, linestyle='--', alpha=0.8)
 
 
+def _json_split_mismatch_segments(
+    rel_start_ms: float,
+    dur_ms: float,
+    cpu_step: int,
+    gpu_step: int,
+    cpu_boundaries_ms: List[float],
+    step_legend_index: int,
+    mismatch_legend_index: int,
+) -> List[Tuple[float, float, int]]:
+    """Mirror draw_bar_with_cpu_boundary: split at crossed CPU step boundary when CPU/GPU steps disagree."""
+    bar_end = rel_start_ms + dur_ms
+    if cpu_step == gpu_step or gpu_step == -1:
+        return [(rel_start_ms, bar_end, step_legend_index)]
+
+    crossed_boundary = None
+    for boundary_ms in cpu_boundaries_ms:
+        if rel_start_ms < boundary_ms < bar_end:
+            crossed_boundary = boundary_ms
+            break
+
+    if crossed_boundary is None:
+        return [(rel_start_ms, bar_end, step_legend_index)]
+
+    left_dur = crossed_boundary - rel_start_ms
+    return [
+        (rel_start_ms, rel_start_ms + left_dur, step_legend_index),
+        (crossed_boundary, bar_end, mismatch_legend_index),
+    ]
+
+
+def _json_clip_intervals(
+    intervals: List[Tuple[float, float, int, int]], total_ms: float
+) -> List[Tuple[float, float, int, int]]:
+    """Clip (t0, t1, legend_idx, priority) to [0, total_ms]."""
+    out: List[Tuple[float, float, int, int]] = []
+    for a, b, idx, pri in intervals:
+        aa = max(0.0, float(a))
+        bb = min(float(total_ms), float(b))
+        if bb > aa:
+            out.append((aa, bb, idx, pri))
+    return out
+
+
+def _json_resolve_intervals_to_segments(
+    intervals: List[Tuple[float, float, int, int]],
+    total_ms: float,
+    nop_legend_index: int,
+) -> List[Dict]:
+    """
+    Turn possibly overlapping (t0, t1, legendIndex, priority) intervals into stacked segments
+    along [0, total_ms]. Higher priority wins; tie-break by later interval start (paint order).
+    """
+    intervals = _json_clip_intervals(intervals, total_ms)
+    if total_ms <= 0:
+        return []
+
+    if not intervals:
+        return [{"value": round(total_ms, 6), "legendIndex": nop_legend_index}]
+
+    pts = {0.0, float(total_ms)}
+    for a, b, _, _ in intervals:
+        pts.add(a)
+        pts.add(b)
+    sorted_pts = sorted(pts)
+
+    segments: List[Dict] = []
+    for i in range(len(sorted_pts) - 1):
+        t0, t1 = sorted_pts[i], sorted_pts[i + 1]
+        span = t1 - t0
+        if span <= 1e-12:
+            continue
+        mid = (t0 + t1) * 0.5
+        candidates = [
+            (a, b, idx, pri)
+            for a, b, idx, pri in intervals
+            if a <= mid + 1e-9 and mid < b + 1e-9
+        ]
+        if not candidates:
+            leg = nop_legend_index
+        else:
+            candidates.sort(key=lambda x: (x[3], x[0]))
+            leg = candidates[-1][2]
+
+        if segments and segments[-1]["legendIndex"] == leg:
+            segments[-1]["value"] = round(segments[-1]["value"] + span, 6)
+        else:
+            segments.append({"value": round(span, 6), "legendIndex": leg})
+
+    # Fix float drift vs total_ms
+    if segments:
+        ssum = sum(s["value"] for s in segments)
+        drift = round(total_ms - ssum, 6)
+        if abs(drift) > 1e-4:
+            if segments[-1]["legendIndex"] == nop_legend_index:
+                segments[-1]["value"] = round(segments[-1]["value"] + drift, 6)
+            else:
+                segments.append({"value": drift, "legendIndex": nop_legend_index})
+    return segments
+
+
+def _json_legend_and_indices(
+    color_by: str,
+    steps_to_plot_sorted: List[int],
+    sorted_ranks: List[int],
+    gpu_data_map,
+    colors: List[str],
+) -> Tuple[List[Dict], Dict[int, int], Dict[int, int], int, int]:
+    """
+    Returns legend list, step_to_legend, rank_to_legend, nop_index, mismatch_index.
+    """
+    legend: List[Dict] = []
+    nop_idx = 0
+    legend.append({"name": "(idle / transparent)", "color": [0.0, 0.0, 0.0, 0.0]})
+
+    step_to_leg: Dict[int, int] = {}
+    rank_to_leg: Dict[int, int] = {}
+
+    if color_by == "step":
+        for i, step in enumerate(steps_to_plot_sorted):
+            c = colors[i % len(colors)]
+            li = len(legend)
+            legend.append({"name": f"Step {step}", "color": [float(x) for x in to_rgba(c)]})
+            step_to_leg[step] = li
+    else:
+        for r in sorted_ranks:
+            c = colors[r % len(colors)]
+            li = len(legend)
+            ds = gpu_data_map[r]
+            gpu_name = next(iter(ds.gpu_info.values())) if ds.gpu_info else "Unknown GPU"
+            legend.append({"name": f"Rank {r} ({gpu_name})", "color": [float(x) for x in to_rgba(c)]})
+            rank_to_leg[r] = li
+
+    mismatch_idx = len(legend)
+    legend.append(
+        {
+            "name": "CPU/GPU step mismatch",
+            "color": [0.9, 0.2, 0.2, 0.55],
+        }
+    )
+
+    return legend, step_to_leg, rank_to_leg, nop_idx, mismatch_idx
+
+
+def _json_step_legend_index(
+    color_by: str,
+    rank: int,
+    step_num: int,
+    step_to_leg: Dict[int, int],
+    rank_to_leg: Dict[int, int],
+) -> int:
+    if color_by == "step":
+        if step_num in step_to_leg:
+            return step_to_leg[step_num]
+        if step_to_leg:
+            return next(iter(step_to_leg.values()))
+        return 1
+    if rank in rank_to_leg:
+        return rank_to_leg[rank]
+    if rank_to_leg:
+        return next(iter(rank_to_leg.values()))
+    return 1
+
+
+def write_timeline_vertical_bar_json(
+    gpu_data_map,
+    final_df: pd.DataFrame,
+    all_steps_map: Dict[int, pd.DataFrame],
+    steps_to_plot: List[int],
+    out_json: str,
+    global_start: int,
+    global_end_ms: float,
+    cpu_boundaries_ms: List[float],
+    full_y_names: List[str],
+    color_by: str = "step",
+    offsets: Optional[Dict] = None,
+    title: Optional[str] = None,
+    bar_width: float = 90.0,
+    bar_gap: float = 20.0,
+) -> None:
+    """
+    Export a vertical stacked-bar JSON schema: x = lane xrank slot, y = time (ms), constant w/h/y per bar.
+    Mirrors plot_timeline_custom_axis data sources; (idle) legend entry covers gaps (explicit NOP segments).
+    """
+    target_stats = final_df[final_df["step"].isin(steps_to_plot)]
+    if target_stats.empty:
+        print(f"[Error] JSON: no data for steps {steps_to_plot}")
+        return
+
+    colors = [
+        "tab:blue",
+        "tab:orange",
+        "tab:green",
+        "tab:red",
+        "tab:purple",
+        "tab:brown",
+        "tab:pink",
+        "tab:gray",
+    ]
+    sorted_ranks = sorted(gpu_data_map.keys())
+    steps_sorted = sorted(steps_to_plot)
+    legend, step_to_leg, rank_to_leg, nop_idx, mismatch_idx = _json_legend_and_indices(
+        color_by, steps_sorted, sorted_ranks, gpu_data_map, colors
+    )
+
+    target_phases = [
+        "data_wait",
+        "h2d",
+        "zero_grad",
+        "Forward",
+        "Backward",
+        "Loss",
+        "nccl_sync",
+        "opt_step",
+        "NCCL_AllReduce",
+    ]
+
+    def collect_intervals_for_lane(lane_name: str, rank: int) -> List[Tuple[float, float, int, int]]:
+        """Return list of (t0, t1, legend_idx, priority)."""
+        out: List[Tuple[float, float, int, int]] = []
+        dataset = gpu_data_map[rank]
+        step_df_sel = all_steps_map[rank][all_steps_map[rank]["step"].isin(steps_to_plot)]
+        if step_df_sel.empty:
+            return out
+
+        df_nvtx = (
+            filter_by_step_ranges(
+                dataset.nvtx_df, step_df_sel, global_start, use_cpu_step=True, rank=rank, offsets=offsets
+            )
+            if not dataset.nvtx_df.empty
+            else pd.DataFrame()
+        )
+        df_nccl = (
+            filter_by_step_ranges(dataset.nccl_df, step_df_sel, global_start, rank=rank, offsets=offsets)
+            if not dataset.nccl_df.empty
+            else pd.DataFrame()
+        )
+        df_memcpy = (
+            filter_by_step_ranges(dataset.memcpy_df, step_df_sel, global_start, rank=rank, offsets=offsets)
+            if not dataset.memcpy_df.empty
+            else pd.DataFrame()
+        )
+        df_compute = (
+            filter_by_step_ranges(dataset.true_gpu_df, step_df_sel, global_start, rank=rank, offsets=offsets)
+            if not dataset.true_gpu_df.empty
+            else pd.DataFrame()
+        )
+
+        def add_mismatch_row(row, pri: int):
+            cpu_step = int(row.get("cpu_step", row["step"]))
+            gpu_step = int(row.get("gpu_step", row["step"]))
+            step_num = gpu_step if gpu_step != -1 else cpu_step
+            li = _json_step_legend_index(color_by, rank, step_num, step_to_leg, rank_to_leg)
+            for a, b, idx in _json_split_mismatch_segments(
+                float(row["rel_start_ms"]),
+                float(row["dur_ms"]),
+                cpu_step,
+                gpu_step,
+                cpu_boundaries_ms,
+                li,
+                mismatch_idx,
+            ):
+                out.append((a, b, idx, pri))
+
+        def append_nvtx_target(matched_target: str) -> None:
+            if df_nvtx.empty:
+                return
+            mask = df_nvtx["name"].str.contains(matched_target, case=False, regex=False)
+            cpu_rows = df_nvtx[mask]
+            for _, cpu_row in cpu_rows.iterrows():
+                step_num = int(cpu_row["step"])
+                li = _json_step_legend_index(color_by, rank, step_num, step_to_leg, rank_to_leg)
+                a = float(cpu_row["rel_start_ms"])
+                b = a + float(cpu_row["dur_ms"])
+                out.append((a, b, li, 0))
+            if not df_compute.empty:
+                gpu_mask = df_compute["name"].str.contains(matched_target, case=False, regex=False)
+                relevant_gpu = df_compute[gpu_mask]
+                for _, gpu_row in relevant_gpu.iterrows():
+                    add_mismatch_row(gpu_row, 1)
+
+        if lane_name == "gpu_compute":
+            if not df_compute.empty:
+                for _, row in df_compute.iterrows():
+                    add_mismatch_row(row, 1)
+            return out
+
+        if lane_name == "h2d":
+            if not df_memcpy.empty:
+                for _, row in df_memcpy.iterrows():
+                    add_mismatch_row(row, 1)
+            append_nvtx_target("h2d")
+            return out
+
+        if lane_name == "NCCL":
+            if not df_nccl.empty:
+                for _, row in df_nccl.iterrows():
+                    add_mismatch_row(row, 1)
+            return out
+
+        # NVTX lanes: same key rule as matplotlib [D] (target string must be contained in lane key).
+        matching_targets = [tn for tn in target_phases if tn.lower() in lane_name.lower()]
+        for mt in matching_targets:
+            append_nvtx_target(mt)
+        return out
+
+    bars: List[Dict] = []
+    slot_x = 0.0
+    for lane_name in full_y_names:
+        for rank in sorted_ranks:
+            if rank not in all_steps_map:
+                continue
+            step_df_sel = all_steps_map[rank][all_steps_map[rank]["step"].isin(steps_to_plot)]
+            if step_df_sel.empty:
+                continue
+
+            intervals = collect_intervals_for_lane(lane_name, rank)
+            segments = _json_resolve_intervals_to_segments(intervals, global_end_ms, nop_idx)
+            bars.append(
+                {
+                    "x": round(slot_x, 6),
+                    "y": 0.0,
+                    "w": bar_width,
+                    "h": round(global_end_ms, 6),
+                    "label": f"{lane_name} R{rank}",
+                    "segments": segments,
+                }
+            )
+            slot_x += bar_width + bar_gap
+
+    payload = {
+        "type": "bar",
+        "title": title
+        or (
+            f"Timeline (vertical bars: x = lane × rank, y = time) | steps {steps_sorted}"
+        ),
+        "unit": "ms",
+        "legend": legend,
+        "bars": bars,
+    }
+
+    out_dir = os.path.dirname(os.path.abspath(out_json))
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+    with open(out_json, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+    print(f"Saved vertical bar JSON to {out_json}")
+
+
 def plot_timeline_custom_axis(
-    gpu_data_map, 
-    final_df, 
+    gpu_data_map,
+    final_df,
     all_steps_map,
-    steps_to_plot, 
-    out_png="timeline.png", 
+    steps_to_plot,
+    out_png="timeline.png",
     show=True,
     color_by="rank",
-    offsets: Optional[Dict] = None
-    ):
+    offsets: Optional[Dict] = None,
+    out_json: Optional[str] = None,
+):
 
     target_stats = final_df[final_df["step"].isin(steps_to_plot)]
     if target_stats.empty:
@@ -1140,27 +1492,21 @@ def plot_timeline_custom_axis(
 
     print(f"  -> CPU step boundaries (ms): {cpu_boundaries_ms}")
 
-    # Figure setup
-    base_names  = ["data_wait", "h2d", "gpu_compute", "NCCL"]
-    fixed_nvtx  = ["zero_grad","forward", "loss", "backward", "opt_step"]
+    base_names = ["data_wait", "h2d", "gpu_compute", "NCCL"]
+    fixed_nvtx = ["zero_grad", "forward", "loss", "backward", "opt_step"]
     full_y_names = list(dict.fromkeys(base_names + fixed_nvtx))
     y_map = {name: i for i, name in enumerate(full_y_names)}
 
-    fig_height = len(full_y_names) * 1.5 + 2
-    plt.figure(figsize=(24, fig_height))
-
-    ax = plt.gca()
-
-    colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red',
-              'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray']
-
-    def get_color(rank, step_num):
-        if color_by == "step":
-            return step_color_map.get(step_num, 'tab:gray')
-        else:
-            return colors[rank % len(colors)]
-
-
+    colors = [
+        "tab:blue",
+        "tab:orange",
+        "tab:green",
+        "tab:red",
+        "tab:purple",
+        "tab:brown",
+        "tab:pink",
+        "tab:gray",
+    ]
     lane_height = 0.8 / len(gpu_data_map)
     sorted_ranks = sorted(gpu_data_map.keys())
 
@@ -1170,10 +1516,43 @@ def plot_timeline_custom_axis(
 
     def get_color(rank, step_num):
         if color_by == "step":
-            return step_color_map.get(step_num, 'tab:gray')
-        else:
-            return colors[rank % len(colors)]
+            return step_color_map.get(step_num, "tab:gray")
+        return colors[rank % len(colors)]
 
+    if out_json:
+        all_gpu_names = []
+        for dataset in gpu_data_map.values():
+            if dataset.gpu_info:
+                all_gpu_names.append(next(iter(dataset.gpu_info.values())))
+        gpu_counts = Counter(all_gpu_names)
+        gpu_title_str = (
+            ", ".join([f"{name} ({count} GPUs)" for name, count in gpu_counts.items()])
+            if gpu_counts
+            else "Unknown GPU"
+        )
+        json_title = (
+            f"[{gpu_title_str}] Multi-GPU Detailed Timeline | Steps: {steps_to_plot}"
+        )
+        write_timeline_vertical_bar_json(
+            gpu_data_map=gpu_data_map,
+            final_df=final_df,
+            all_steps_map=all_steps_map,
+            steps_to_plot=steps_to_plot,
+            out_json=out_json,
+            global_start=global_start,
+            global_end_ms=global_end_ms,
+            cpu_boundaries_ms=cpu_boundaries_ms,
+            full_y_names=full_y_names,
+            color_by=color_by,
+            offsets=offsets,
+            title=json_title,
+        )
+        return
+
+    fig_height = len(full_y_names) * 1.5 + 2
+    plt.figure(figsize=(24, fig_height))
+
+    ax = plt.gca()
 
     for rank in sorted_ranks:
 
@@ -1644,16 +2023,44 @@ def process_full_analysis(con: sqlite3.Connection,
 
 if __name__ == "__main__":
 
-    target_steps = []
+    parser = argparse.ArgumentParser(
+        description="Build multi-GPU NVTX / NCCL / memcpy timelines from nsys SQLite exports."
+    )
+    parser.add_argument(
+        "--dir",
+        default=".",
+        help="Directory containing *.sqlite profile files (default: current directory).",
+    )
+    parser.add_argument(
+        "--json",
+        nargs="?",
+        const="",
+        default=None,
+        metavar="PATH",
+        help="Emit vertical-bar JSON instead of matplotlib PNG; optional output path "
+        "(default: same basename as the PNG with .json).",
+    )
+    parser.add_argument(
+        "--all-steps",
+        action="store_true",
+        help="Plot every step found in NVTX after load (do not pass explicit STEP numbers).",
+    )
+    parser.add_argument(
+        "steps",
+        nargs="*",
+        type=int,
+        metavar="STEP",
+        help="Training step indices to include (ignored when --all-steps is set).",
+    )
+    ns = parser.parse_args()
 
-    sqlite_dir = "."
+    sqlite_dir = ns.dir
+    json_out_arg: Optional[str] = ns.json
+    use_all_steps = ns.all_steps
+    target_steps: List[int] = list(ns.steps)
 
-    args = sys.argv[1:]
-    for i, arg in enumerate(args):
-        if arg == "--dir" and i + 1 < len(args):
-            sqlite_dir = args[i + 1]
-        elif arg.isdigit():
-            target_steps.append(int(arg))
+    if use_all_steps and target_steps:
+        parser.error("Remove STEP arguments when using --all-steps")
 
     # Detect all sqlite files in the target directory
     all_files = sorted(glob.glob(os.path.join(sqlite_dir, "*.sqlite")))
@@ -1694,19 +2101,23 @@ if __name__ == "__main__":
 
     sqlite_files = sorted(groups[selected_key])
 
-    
-    # Prompt for step numbers if not provided via command line
-    if not target_steps:
+    # Prompt for step numbers if not provided via command line (and not --all-steps)
+    if not use_all_steps and not target_steps:
         step_input = input("Enter step numbers to plot (e.g. 2 3 4): ").strip()
         target_steps = [int(s) for s in step_input.split() if s.isdigit()]
 
-    # Fall back to default steps if still empty
-    if not target_steps:
-        target_steps = [1, 2, 3]
+    if not use_all_steps and not target_steps:
+        print("No target steps provided, exiting...")
+        sys.exit(1)
+
+    load_steps: List[int] = [] if use_all_steps else target_steps
 
     print(f"\n--- Configuration ---")
     print(f"Selected experiment: {selected_key}")
-    print(f"Target Steps: {target_steps}")
+    if use_all_steps:
+        print("Target steps: (all steps from trace, resolved after load)")
+    else:
+        print(f"Target Steps: {target_steps}")
     print(f"Files ({len(sqlite_files)}):")
     for f in sqlite_files:
         print(f"  - {f}")
@@ -1720,7 +2131,7 @@ if __name__ == "__main__":
         rank = get_rank_from_filename(filepath, i)
         
         # Load single GPU dataset (using load_single_gpu defined earlier)
-        dataset = load_single_gpu(filepath, rank, target_steps)
+        dataset = load_single_gpu(filepath, rank, load_steps)
         
         
         if dataset:
@@ -1749,7 +2160,14 @@ if __name__ == "__main__":
         if final_df.empty:
             print("[Error] Could not calculate global step intervals. Check if NVTX markers exist.")
             sys.exit(1)
-            
+
+        if use_all_steps:
+            target_steps = sorted(int(s) for s in final_df["step"].unique().tolist())
+            if not target_steps:
+                print("[Error] --all-steps: no steps in global step table.")
+                sys.exit(1)
+            print(f"\n[--all-steps] Using {len(target_steps)} steps: {target_steps}")
+
         print("\n--- Global Step Statistics ---")
         print(final_df.to_string(index=False))
         print("------------------------------\n")
@@ -1764,12 +2182,22 @@ if __name__ == "__main__":
             print(f"\nRank {rank} data_wait:")
             print(dw.to_string())
 
-        output_filename = f"timeline_{selected_key}_steps{'_'.join(map(str, target_steps))}.png"
-        
+        if use_all_steps:
+            output_filename = (
+                f"timeline_{selected_key}_allsteps_n{len(target_steps)}_"
+                f"{target_steps[0]}-{target_steps[-1]}.png"
+            )
+        else:
+            output_filename = f"timeline_{selected_key}_steps{'_'.join(map(str, target_steps))}.png"
+
+        json_output_path: Optional[str] = None
+        if json_out_arg is not None:
+            json_output_path = json_out_arg if json_out_arg else output_filename.replace(".png", ".json")
+
         for rank, dataset in gpu_data_map.items():
             print(f"\nRank {rank} true_gpu_df gpu_step distribution:")
             print(dataset.true_gpu_df[["name", "gpu_step"]].value_counts())
-        
+
         plot_timeline_custom_axis(
             gpu_data_map=gpu_data_map,
             final_df=final_df,
@@ -1777,8 +2205,9 @@ if __name__ == "__main__":
             steps_to_plot=target_steps,
             out_png=output_filename,
             show=True,
-            color_by="step", # set False on headless servers
-            offsets=offsets 
+            color_by="step",  # set False on headless servers
+            offsets=offsets,
+            out_json=json_output_path,
         )
         # for rank, dataset in gpu_data_map.items():
         #     fwd = dataset.nvtx_df[
