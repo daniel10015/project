@@ -33,7 +33,6 @@ data/
 trash/
 
 # CSV results
-*.csv
 step_metrics.csv
 mem_log.csv*.tar.gz
 *.gz
