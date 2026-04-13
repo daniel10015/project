@@ -5,7 +5,14 @@ import sys
 import os
 import glob
 import re
+import json
+import argparse
 from collections import defaultdict
+
+# Force a non-GUI matplotlib backend early to avoid GTK/Wayland segfaults.
+# Must happen before any module imports matplotlib.pyplot.
+if os.environ.get("MPLBACKEND") is None:
+    os.environ["MPLBACKEND"] = "Agg"
 
 from loaders.data_loader import load_single_gpu,get_all_step_intervals,compute_rank_order_per_step
 from analysis.clock_offset import calculate_clock_offsets
@@ -15,6 +22,8 @@ from analysis.sm_analysis import build_sm_timeline_df
 from viz.plot_sm_timeline import plot_sm_timeline
 from viz.plot_wait_time   import plot_wait_time_summary
 from viz.plot_timeline    import plot_timeline_custom_axis
+
+from viz.plot_timeline import get_merged_intervals
 
 from viz.plot_memory import (
     load_mem_csvs,
@@ -494,7 +503,332 @@ DEBUG_SM_TIMELINE    = True  # Build SM utilization timeline (slow)
 DEBUG_PLOT           = True  # Generate and save plots
 
 
-def run_analysis(gpu_data_map: dict, target_steps: list[int], exp_info: dict = None):
+def get_all_steps_from_loaded_data(gpu_data_map: dict) -> list[int]:
+    """
+    Best-effort step discovery for --all.
+    Prefers df_gpu_duration.data_batch_idx; falls back to NVTX data_batch_idx.
+    """
+    steps: set[int] = set()
+    for _, ds in gpu_data_map.items():
+        if getattr(ds, "df_gpu_duration", None) is not None and not ds.df_gpu_duration.empty:
+            if "data_batch_idx" in ds.df_gpu_duration.columns:
+                for v in ds.df_gpu_duration["data_batch_idx"].dropna().unique().tolist():
+                    try:
+                        steps.add(int(v))
+                    except Exception:
+                        pass
+        if getattr(ds, "df_nvtx", None) is not None and not ds.df_nvtx.empty:
+            if "data_batch_idx" in ds.df_nvtx.columns:
+                for v in ds.df_nvtx["data_batch_idx"].dropna().unique().tolist():
+                    try:
+                        steps.add(int(v))
+                    except Exception:
+                        pass
+    return sorted(steps)
+
+
+def _rgba_floats(color) -> list[float]:
+    return [float(color[0]), float(color[1]), float(color[2]), float(color[3])]
+
+
+def _total_duration_ms(intervals: list) -> float:
+    return float(sum(en - st for st, en in intervals) / 1e6) if intervals else 0.0
+
+
+def export_phase_rank_step_json(
+    gpu_data_map: dict,
+    steps_to_export: list[int],
+    df_rank_order_per_step,
+    all_steps_map: dict,
+    offsets: dict,
+    out_json: str,
+    title: str,
+) -> None:
+    """
+    Timeline-as-stacked-bar JSON in the viewer's `type="bar"` format:
+      - bar = one "lane" from the matplotlib timeline (row_name + rank)
+      - segments are laid out in TIME ORDER from global_start → global_end
+      - gaps between events are encoded as transparent "NOP" segments, so the
+        spacing matches the matplotlib timeline (forward blocks are separated, etc.)
+    """
+    from viz.plot_timeline import (
+        filter_by_step_ranges,
+        aggregate_gpu_kernels_by_nvtx,
+        RANK_COLORS,
+    )
+    import matplotlib.colors as mcolors
+
+    steps_sorted = sorted(steps_to_export)
+    if not steps_sorted:
+        raise ValueError("No steps to export.")
+
+    # Keep ordering identical to plot_timeline_custom_axis()
+    rows_in_order: list[str] = [
+        "data_wait",
+        "h2d",
+        "gpu_compute",
+        "NCCL",
+        "zero_grad",
+        "forward",
+        "loss",
+        "backward",
+        "opt_step",
+    ]
+
+    target_stats = df_rank_order_per_step[df_rank_order_per_step["step"].isin(steps_sorted)]
+    if target_stats.empty:
+        raise ValueError(f"No df_rank_order_per_step rows for steps {steps_sorted}")
+    global_start = int(target_stats["earliest_start"].min())
+    global_end = int(target_stats["bwd_latest_end"].max())
+    timeline_duration_ms = float((global_end - global_start) / 1e6)
+
+    # Legend: match matplotlib y-axis order (top → bottom).
+    # In `plot_timeline_custom_axis()`, y=0 is the bottom row and the last item is the top row.
+    legend_names_top_to_bottom = list(reversed(rows_in_order))
+
+    # IMPORTANT: Do NOT change the JSON schema. The renderer only supports:
+    #   legend[*] = { name, color } and bar.segments[*] = { value, legendIndex }.
+    #
+    # To represent matplotlib's "faint CPU launch" bars, we emit separate legend
+    # entries for CPU lanes with the same RGB but alpha=0.3, and output separate
+    # bars labeled "(CPU)".
+    cpu_overlay_rows = {
+        "data_wait",
+        "h2d",
+        "gpu_compute",
+        "NCCL",
+        "zero_grad",
+        "forward",
+        "loss",
+        "backward",
+        "opt_step",
+    }
+
+    legend: list[dict] = []
+    legend_index_for_lane: dict[tuple[str, str], int] = {}  # (row_name, kind) -> legendIndex
+    for i, name in enumerate(legend_names_top_to_bottom):
+        # Use the exact same base palette as the matplotlib timeline.
+        # (timeline uses tab: colors from `RANK_COLORS`, either per-rank or per-step)
+        base_color = RANK_COLORS[i % len(RANK_COLORS)] if RANK_COLORS else "tab:blue"
+        base_rgba = list(mcolors.to_rgba(base_color, alpha=1.0))
+        # GPU (solid)
+        legend_index_for_lane[(name, "gpu")] = len(legend)
+        legend.append({"name": name, "color": [float(x) for x in base_rgba]})
+
+        # CPU (faint) where applicable
+        if name in cpu_overlay_rows:
+            legend_index_for_lane[(name, "cpu")] = len(legend)
+            cpu_rgba = list(mcolors.to_rgba(base_color, alpha=0.3))
+            legend.append({"name": f"{name} (CPU)", "color": [float(x) for x in cpu_rgba]})
+
+    nop_legend_index = len(legend)
+    legend.append({"name": "NOP", "color": [0.0, 0.0, 0.0, 0.0]})
+
+    # Row naming consistent with matplotlib timeline
+    phase_to_row = {
+        "cpu_data_wait_launch":       "data_wait",
+        "cpu_h2d_launch":             "h2d",
+        "cpu_zero_grad_launch":       "zero_grad",
+        "cpu_forward_launch":         "forward",
+        "cpu_loss_launch":            "loss",
+        "cpu_backward_launch":        "backward",
+        "cpu_opt_step_launch":        "opt_step",
+        "cpu_nccl_allreduce_launch":  "NCCL",
+        "cpu_train_compute_wrapper":  "gpu_compute",
+    }
+    gpu_to_row = {
+        "gpu_forward_duration":         "forward",
+        "gpu_backward_duration":        "backward",
+        "gpu_loss_duration":            "loss",
+        "gpu_opt_step_duration":        "opt_step",
+        "gpu_zero_grad_duration":       "zero_grad",
+        "gpu_train_compute_duration":   "gpu_compute",
+        "gpu_nccl_allreduce_duration":  "NCCL",
+    }
+
+    sorted_ranks = sorted(gpu_data_map.keys())
+
+    def _build_segments_from_events(
+        lane_events: list[tuple[float, float, int]],
+        total_ms: float,
+        nop_idx: int,
+    ) -> list[dict]:
+        """
+        Convert sorted lane events into stacked segments with transparent gaps.
+        lane_events: [(start_ms, dur_ms, legendIndex), ...]
+        """
+        segs: list[dict] = []
+        cursor = 0.0
+        for st, dur, li in lane_events:
+            st = float(st)
+            dur = float(dur)
+            if dur <= 0:
+                continue
+            if st > cursor:
+                segs.append({"value": float(st - cursor), "legendIndex": nop_idx})
+            segs.append({"value": dur, "legendIndex": int(li)})
+            cursor = max(cursor, st + dur)
+        if total_ms > cursor:
+            segs.append({"value": float(total_ms - cursor), "legendIndex": nop_idx})
+        return segs
+
+    # Uniform bar geometry: identical y/w/h; only x differs
+    bar_w = 90
+    rank_stride = 115  # within-group spacing
+    group_gap = 140    # between row groups
+
+    bars: list[dict] = []
+    x_cursor = 0
+
+    # JSON-only: mirror ONLY the "type" lanes (the overview rows),
+    # but keep the detailed phase lanes in the exact same ordering.
+    base_names = ["data_wait", "h2d", "gpu_compute", "NCCL"]
+    fixed_nvtx = ["zero_grad", "forward", "loss", "backward", "opt_step"]
+    json_rows_for_bars = list(reversed(base_names)) + fixed_nvtx
+
+    for row_name in json_rows_for_bars:
+        # NVTX name for the faint CPU-launch lane (if this row has one)
+        overlay_nvtx_name = next((k for k, v in phase_to_row.items() if v == row_name), None)
+        # gpu_duration name for the solid GPU execution lane (if this row has one)
+        gpu_name_for_row = next((k for k, v in gpu_to_row.items() if v == row_name), None)
+
+        for ri, rank in enumerate(sorted_ranks):
+            ds = gpu_data_map.get(rank)
+            if ds is None or rank not in all_steps_map:
+                continue
+            step_df_sel = all_steps_map[rank][all_steps_map[rank]["step"].isin(steps_sorted)]
+            if step_df_sel.empty:
+                continue
+
+            df_nvtx = (
+                filter_by_step_ranges(
+                    ds.df_nvtx, step_df_sel, global_start,
+                    use_data_batch_idx=True, rank=rank, offsets=offsets,
+                )
+                if getattr(ds, "df_nvtx", None) is not None and not ds.df_nvtx.empty
+                else pd.DataFrame()
+            )
+            df_memcpy = (
+                filter_by_step_ranges(
+                    ds.df_memcpy, step_df_sel, global_start,
+                    use_data_batch_idx=True, rank=rank, offsets=offsets,
+                )
+                if getattr(ds, "df_memcpy", None) is not None and not ds.df_memcpy.empty
+                else pd.DataFrame()
+            )
+            df_nccl = (
+                filter_by_step_ranges(
+                    ds.df_nccl, step_df_sel, global_start,
+                    rank=rank, offsets=offsets,
+                )
+                if getattr(ds, "df_nccl", None) is not None and not ds.df_nccl.empty
+                else pd.DataFrame()
+            )
+
+            df_gpu_agg = (
+                aggregate_gpu_kernels_by_nvtx(ds.df_gpu_duration)
+                if getattr(ds, "df_gpu_duration", None) is not None and not ds.df_gpu_duration.empty
+                else pd.DataFrame()
+            )
+            df_gpu = (
+                filter_by_step_ranges(
+                    df_gpu_agg, step_df_sel, global_start,
+                    rank=rank, offsets=offsets,
+                )
+                if df_gpu_agg is not None and not df_gpu_agg.empty
+                else pd.DataFrame()
+            )
+
+            gpu_events: list[tuple[float, float, int]] = []
+            cpu_events: list[tuple[float, float, int]] = []
+
+            li_gpu = legend_index_for_lane.get((row_name, "gpu"), nop_legend_index)
+            li_cpu = legend_index_for_lane.get((row_name, "cpu"), nop_legend_index)
+
+            if row_name == "data_wait":
+                if not df_nvtx.empty:
+                    cpu_rows = df_nvtx[df_nvtx["name"] == "cpu_data_wait_launch"]
+                    for _, r in cpu_rows.iterrows():
+                        cpu_events.append((float(r["rel_start_ms"]), float(r["dur_ms"]), li_cpu))
+
+            elif row_name == "h2d":
+                if not df_memcpy.empty:
+                    for _, r in df_memcpy.iterrows():
+                        gpu_events.append((float(r["rel_start_ms"]), float(r["dur_ms"]), li_gpu))
+
+            elif row_name == "NCCL":
+                if not df_nccl.empty:
+                    for _, r in df_nccl.iterrows():
+                        gpu_events.append((float(r["rel_start_ms"]), float(r["dur_ms"]), li_gpu))
+
+            elif row_name == "gpu_compute":
+                if not df_gpu.empty:
+                    for _, r in df_gpu.iterrows():
+                        gpu_events.append((float(r["rel_start_ms"]), float(r["dur_ms"]), li_gpu))
+
+            else:
+                # Per-phase GPU spans (preferred)
+                if gpu_name_for_row and not df_gpu.empty:
+                    gpu_rows = df_gpu[df_gpu["name"] == gpu_name_for_row]
+                    for _, r in gpu_rows.iterrows():
+                        gpu_events.append((float(r["rel_start_ms"]), float(r["dur_ms"]), li_gpu))
+
+                # Fallback to CPU launch spans if GPU spans missing
+                if not gpu_events and not df_nvtx.empty and overlay_nvtx_name:
+                    cpu_rows = df_nvtx[df_nvtx["name"] == overlay_nvtx_name]
+                    for _, r in cpu_rows.iterrows():
+                        cpu_events.append((float(r["rel_start_ms"]), float(r["dur_ms"]), li_cpu))
+
+            # Always include CPU launch spans where available (light bars in matplotlib).
+            if overlay_nvtx_name and not df_nvtx.empty:
+                cpu_rows = df_nvtx[df_nvtx["name"] == overlay_nvtx_name]
+                for _, r in cpu_rows.iterrows():
+                    cpu_events.append((float(r["rel_start_ms"]), float(r["dur_ms"]), li_cpu))
+
+            gpu_events.sort(key=lambda t: (t[0], t[1]))
+            cpu_events.sort(key=lambda t: (t[0], t[1]))
+
+            if gpu_events:
+                bars.append({
+                    "x": x_cursor + ri * rank_stride,
+                    "y": 0,
+                    "w": bar_w,
+                    "h": timeline_duration_ms,
+                    "label": f"{row_name} R{rank}",
+                    "segments": _build_segments_from_events(gpu_events, timeline_duration_ms, nop_legend_index),
+                })
+            if cpu_events:
+                bars.append({
+                    "x": x_cursor + ri * rank_stride,
+                    "y": 0,
+                    "w": bar_w,
+                    "h": timeline_duration_ms,
+                    "label": f"{row_name} (CPU) R{rank}",
+                    "segments": _build_segments_from_events(cpu_events, timeline_duration_ms, nop_legend_index),
+                })
+
+        x_cursor += len(sorted_ranks) * rank_stride + group_gap
+
+    payload = {
+        "type": "bar",
+        "title": title,
+        "unit": "ms",
+        "legend": legend,
+        "bars": bars,
+    }
+
+    os.makedirs(os.path.dirname(out_json) or ".", exist_ok=True)
+    with open(out_json, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+    print(f"[json] Saved: {out_json}")
+
+
+def run_analysis(
+    gpu_data_map: dict,
+    target_steps: list[int],
+    exp_info: dict = None,
+    json_only: bool = False,
+):
 
     tag = exp_info["tag"] if exp_info else "experiment"
 
@@ -539,7 +873,7 @@ def run_analysis(gpu_data_map: dict, target_steps: list[int], exp_info: dict = N
     # Simple example:
     #   Rank 0 finishes backward at t=100ms → AllReduce starts at t=120ms
     #   Wait time for Rank 0 = 120 - 100 = 20ms  ← this is wasted time
-    if DEBUG_WAIT_TIME:
+    if (not json_only) and DEBUG_WAIT_TIME:
         print("\n" + "─" * 60)
         print("  [DEBUG] NCCL Wait Time Analysis")
         print("─" * 60)
@@ -556,7 +890,7 @@ def run_analysis(gpu_data_map: dict, target_steps: list[int], exp_info: dict = N
     # ── SM Timeline ───────────────────────────────────────────────────────────
     # Builds a per-bucket SM utilization timeline for each rank and step.
     # This is the core data for the SM utilization plot.
-    if DEBUG_SM_TIMELINE:
+    if (not json_only) and DEBUG_SM_TIMELINE:
         print("\n" + "─" * 60)
         print("  [DEBUG] Building SM Timeline")
         print("─" * 60)
@@ -572,7 +906,7 @@ def run_analysis(gpu_data_map: dict, target_steps: list[int], exp_info: dict = N
         df_sm_timeline = None
 
     # # ── Plots ─────────────────────────────────────────────────────────────────
-    if DEBUG_PLOT:
+    if (not json_only) and DEBUG_PLOT:
         print("\n" + "─" * 60)
         print("  [DEBUG] Generating Plots")
         print("─" * 60)
@@ -637,7 +971,7 @@ def run_analysis(gpu_data_map: dict, target_steps: list[int], exp_info: dict = N
         # ── breakdown plot─────────────────────────────────────────
         df_breakdown = aggregate_per_step_breakdown(
             gpu_data_map           = gpu_data_map,
-            steps_to_plot          = [1,2,3,4,5,6,7,8,9],
+            steps_to_plot          = target_steps,
             nccl_wait_df           = wait_df,
             offsets                = offsets,
             df_rank_order_per_step = df_rank_order_per_step,
@@ -649,6 +983,19 @@ def run_analysis(gpu_data_map: dict, target_steps: list[int], exp_info: dict = N
         )
 
         print(f"\n  All plots saved to: {os.path.abspath('plots')}/")
+
+    if json_only:
+        dirs = make_plot_dir("plots")
+        out_prefix = os.path.join(dirs["breakdown"], f"step_breakdown_{tag}")
+        export_phase_rank_step_json(
+            gpu_data_map=gpu_data_map,
+            steps_to_export=target_steps,
+            df_rank_order_per_step=df_rank_order_per_step,
+            all_steps_map=all_steps_map,
+            offsets=offsets,
+            out_json=out_prefix + ".json",
+            title="Per-phase durations per rank (vertical layout: x = phase/rank, y = time)",
+        )
 
 
     print("\n[Done] Analysis complete.")
@@ -753,64 +1100,61 @@ def run_memory_analysis(
 # Entry Point
 # ─────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Analyze Nsight Systems DDP traces.")
+    parser.add_argument("--dir", default=".", help="Directory containing per-rank .sqlite files")
+    parser.add_argument("--json", action="store_true", help="Write JSON only (no matplotlib outputs)")
+    parser.add_argument("--all", action="store_true", help="Analyze all steps found (no interactive prompt)")
+    parser.add_argument("steps", nargs="*", type=int, help="Step numbers to analyze")
+    cli = parser.parse_args()
 
-    # ── Parse command-line arguments ──────────────────────────────────────────
-    # Usage examples:
-    #   python main.py                        → scans current directory
-    #   python main.py --dir /path/to/sqlite  → scans specified directory
-    #   python main.py --dir /path 2 3 4      → also pre-selects steps 2, 3, 4
-    args         = sys.argv[1:]
-    sqlite_dir   = "."
-    steps_from_args = []
-
-    i = 0
-    while i < len(args):
-        if args[i] == "--dir" and i + 1 < len(args):
-            sqlite_dir = args[i + 1]
-            i += 2
-        elif args[i].isdigit():
-            steps_from_args.append(int(args[i]))
-            i += 1
-        else:
-            i += 1
+    sqlite_dir = cli.dir
+    steps_from_args = list(cli.steps) if cli.steps else []
 
     # ── File selection ────────────────────────────────────────────────────────
     sqlite_files = select_sqlite_files(sqlite_dir)
-    target_steps = select_steps(steps_from_args)
 
     # ── Print config summary ──────────────────────────────────────────────────
     print("\n" + "=" * 60)
     print("  Configuration")
     print("=" * 60)
     print(f"  Directory    : {os.path.abspath(sqlite_dir)}")
-    print(f"  Target steps : {target_steps}")
+    if cli.all:
+        print("  Target steps : --all (discover after load)")
+    else:
+        print(f"  Target steps : {steps_from_args if steps_from_args else '(prompt)'}")
     print(f"  Files ({len(sqlite_files)}):")
     for f in sqlite_files:
         print(f"    - {os.path.basename(f)}")
 
     # # ── Load data ─────────────────────────────────────────────────────────────
     ACTIVE_GPU_SPECS = GPU_SPECS_A100 
-    gpu_data_map = load_data(sqlite_files, target_steps, ACTIVE_GPU_SPECS)
+    gpu_data_map = load_data(sqlite_files, steps_from_args, ACTIVE_GPU_SPECS)
+
+    if cli.all:
+        target_steps = get_all_steps_from_loaded_data(gpu_data_map)
+        if not target_steps:
+            print("[Error] --all requested but no steps were discovered.")
+            sys.exit(1)
+    else:
+        target_steps = select_steps(steps_from_args)
 
     
 
     # # ── Sanity check ─────────────────────────────────────────────────────────
     print_data_summary(gpu_data_map)
 
-   # # ── export csv ─────────────────────────────────────────────────────────
-    export_to_csv(gpu_data_map, out_dir = "csv_export")
-
     # # ── Run analysis ──────────────────────────────────────────────────────────
     exp_info = parse_experiment_info(sqlite_files)
-    run_analysis(gpu_data_map, target_steps,exp_info)
+    run_analysis(gpu_data_map, target_steps, exp_info, json_only=cli.json)
 
+    if not cli.json:
+        # # ── export csv ─────────────────────────────────────────────────────
+        export_to_csv(gpu_data_map, out_dir="csv_export")
 
-    # ── Memory analysis ───────────────────────────────────────────────────────
-    # Reads CSV files from mem/ directory and produces memory plots.
-    # Pass step numbers as args to also generate per-step breakdown plots.
-    # Example: python main.py --dir sqlite/ 2 10 49
-    run_memory_analysis(
-        mem_dir      = "mem",
-        exp_info     = exp_info,
-        target_steps = steps_from_args if steps_from_args else None,
-    )
+        # ── Memory analysis ─────────────────────────────────────────────────
+        # Reads CSV files from mem/ directory and produces memory plots.
+        run_memory_analysis(
+            mem_dir      = "mem",
+            exp_info     = exp_info,
+            target_steps = steps_from_args if steps_from_args else None,
+        )
