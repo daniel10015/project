@@ -357,8 +357,8 @@ def plot_timeline_custom_axis(
     # ── Y-axis layout ─────────────────────────────────────────────────────────
     # Each row = one activity type
     # Rows are stacked: base_names first (overview), then per-phase detail
-    base_names   = ["data_wait", "h2d", "gpu_compute", "NCCL"]
-    fixed_nvtx   = ["zero_grad", "forward", "loss", "backward", "opt_step"]
+    base_names   = ["data_wait", "h2d", "NCCL"] # , "gpu_compute"
+    fixed_nvtx   = ["forward", "backward", "opt_step"] # "loss", "zero_grad"
     full_y_names = list(dict.fromkeys(base_names + fixed_nvtx))
     y_map        = {name: i for i, name in enumerate(full_y_names)}
 
@@ -385,9 +385,9 @@ def plot_timeline_custom_axis(
     phase_to_ymap = {
         "cpu_data_wait_launch":       "data_wait",
         "cpu_h2d_launch":             "h2d",
-        "cpu_zero_grad_launch":       "zero_grad",
+        # "cpu_zero_grad_launch":       "zero_grad",
         "cpu_forward_launch":         "forward",
-        "cpu_loss_launch":            "loss",
+        # "cpu_loss_launch":            "loss",
         "cpu_backward_launch":        "backward",
         "cpu_opt_step_launch":        "opt_step",
         "cpu_nccl_allreduce_launch":  "NCCL",
@@ -398,9 +398,9 @@ def plot_timeline_custom_axis(
     gpu_to_ymap = {
         "gpu_forward_duration":         "forward",
         "gpu_backward_duration":        "backward",
-        "gpu_loss_duration":            "loss",
+        # "gpu_loss_duration":            "loss",
         "gpu_opt_step_duration":        "opt_step",
-        "gpu_zero_grad_duration":       "zero_grad",
+        # "gpu_zero_grad_duration":       "zero_grad",
         "gpu_train_compute_duration":   "gpu_compute",
         "gpu_nccl_allreduce_duration":  "NCCL",
     }
@@ -454,28 +454,28 @@ def plot_timeline_custom_axis(
             else pd.DataFrame()
         )
 
-        # ── [A] gpu_compute row — all GPU duration events ─────────────────────
-        if not df_gpu_duration.empty and "gpu_compute" in y_map:
-            y_base = y_map["gpu_compute"]
-            for _, row in df_gpu_duration.iterrows():
-                step_num  = int(row.get("data_batch_idx", row["step"]))
-                bar_color = get_color(rank, step_num)
-                draw_bar(ax, row["rel_start_ms"], row["dur_ms"],
-                         y_base + rank_offset, lane_height, bar_color, alpha=0.9)
-                if row["dur_ms"] > 10:
-                    ax.text(
-                        row["rel_start_ms"] + row["dur_ms"] / 2,
-                        y_base + rank_offset + lane_height / 2,
-                        f"S{step_num}", ha="center", va="center",
-                        fontsize=7, fontweight="bold", color="white", clip_on=True,
-                    )
-                if color_by == "step":
-                    ax.text(
-                        row["rel_start_ms"] + 1,
-                        y_base + rank_offset + lane_height / 2,
-                        f"R{rank}", ha="left", va="center",
-                        fontsize=6, fontweight="bold", color="white", clip_on=True,
-                    )
+        # # ── [A] gpu_compute row — all GPU duration events ─────────────────────
+        # if not df_gpu_duration.empty and "gpu_compute" in y_map:
+        #     y_base = y_map["gpu_compute"]
+        #     for _, row in df_gpu_duration.iterrows():
+        #         step_num  = int(row.get("data_batch_idx", row["step"]))
+        #         bar_color = get_color(rank, step_num)
+        #         draw_bar(ax, row["rel_start_ms"], row["dur_ms"],
+        #                  y_base + rank_offset, lane_height, bar_color, alpha=0.9)
+        #         if row["dur_ms"] > 10:
+        #             ax.text(
+        #                 row["rel_start_ms"] + row["dur_ms"] / 2,
+        #                 y_base + rank_offset + lane_height / 2,
+        #                 f"S{step_num}", ha="center", va="center",
+        #                 fontsize=16, fontweight="bold", color="white", clip_on=True,
+        #             )
+        #         if color_by == "step":
+        #             ax.text(
+        #                 row["rel_start_ms"] + 1,
+        #                 y_base + rank_offset + lane_height / 2,
+        #                 f"R{rank}", ha="left", va="center",
+        #                 fontsize=6, fontweight="bold", color="white", clip_on=True,
+        #             )
 
         # ── [B] h2d row — DMA memory copy events ──────────────────────────────
         if "h2d" in y_map and not df_memcpy.empty:
@@ -490,8 +490,8 @@ def plot_timeline_custom_axis(
                     ax.text(
                         row["rel_start_ms"] + row["dur_ms"] / 2,
                         current_y + lane_height / 2,
-                        f"S{step_num}", ha="center", va="center",
-                        fontsize=7, fontweight="bold", color="white", clip_on=True,
+                        f"R{rank} S{step_num}", ha="center", va="center",
+                        fontsize=16, fontweight="bold", color="white", clip_on=True,
                     )
 
         # ── [C] NCCL row — AllReduce GPU kernels ──────────────────────────────
@@ -503,13 +503,13 @@ def plot_timeline_custom_axis(
                 bar_color = get_color(rank, step_num)
                 draw_bar(ax, row["rel_start_ms"], row["dur_ms"],
                          current_y, lane_height, bar_color, alpha=0.9)
-                if row["dur_ms"] > 10:
-                    ax.text(
-                        row["rel_start_ms"] + row["dur_ms"] / 2,
-                        current_y + lane_height / 2,
-                        f"S{step_num}", ha="center", va="center",
-                        fontsize=7, fontweight="bold", color="white", clip_on=True,
-                    )
+                # if row["dur_ms"] > 10:
+                #     ax.text(
+                #         row["rel_start_ms"] + row["dur_ms"] / 2,
+                #         current_y + lane_height / 2,
+                #         f"R{rank}S{step_num}", ha="center", va="center",
+                #         fontsize=16, fontweight="bold", color="white", clip_on=True,
+                #     )
 
         # ── [D] Per-phase rows — CPU (faint) + GPU (solid) overlay ───────────
         if not df_nvtx.empty:
@@ -543,12 +543,12 @@ def plot_timeline_custom_axis(
                         linewidth= 1.5,
                         alpha    = 0.8,
                     )
-                    ax.text(
-                        cpu_row["rel_start_ms"] + cpu_row["dur_ms"] / 2,
-                        current_y + lane_height / 2,
-                        f"S{step_num}", ha="center", va="center",
-                        fontsize=7, fontweight="bold", color="black", clip_on=True,
-                    )
+                    # ax.text(
+                    #     cpu_row["rel_start_ms"] + cpu_row["dur_ms"] / 2,
+                    #     current_y + lane_height / 2,
+                    #     f"R{rank} S{step_num}", ha="center", va="center",
+                    #     fontsize=16, fontweight="bold", color="black", clip_on=True,
+                    # )
 
                 # GPU events — drawn solid over the CPU bars
                 if not df_gpu_duration.empty:
@@ -565,8 +565,8 @@ def plot_timeline_custom_axis(
                             ax.text(
                                 gpu_row["rel_start_ms"] + gpu_row["dur_ms"] / 2,
                                 current_y + lane_height / 2,
-                                f"S{step_num}", ha="center", va="center",
-                                fontsize=7, fontweight="bold", color="white", clip_on=True,
+                                f"R{rank} S{step_num}", ha="center", va="center",
+                                fontsize=16, fontweight="bold", color="white", clip_on=True,
                             )
 
     # ── Step boundary lines ───────────────────────────────────────────────────
@@ -617,28 +617,28 @@ def plot_timeline_custom_axis(
     )
 
     # ── Legend ────────────────────────────────────────────────────────────────
-    legend_elements = [
-        Patch(
-            facecolor = colors[r % len(colors)],
-            label     = (
-                f"Rank {r} "
-                f"({next(iter(gpu_data_map[r].gpu_info.values()), 'GPU')})"
-            ),
-        )
-        for r in sorted_ranks
-    ]
-    legend_elements += [
-        Patch(facecolor="none", edgecolor="black",
-              label="CPU step start (dashed) / end (solid)"),
-        Patch(facecolor="none", edgecolor="blue",
-              label="GPU backward end — bwd_latest_end (blue)"),
-    ]
-    ax.legend(
-        handles          = legend_elements,
-        loc              = "upper right",
-        title            = "GPU Ranks",
-        bbox_to_anchor   = (1.05, 1),
-    )
+    # legend_elements = [
+    #     Patch(
+    #         facecolor = colors[r % len(colors)],
+    #         label     = (
+    #             f"Rank {r} "
+    #             f"({next(iter(gpu_data_map[r].gpu_info.values()), 'GPU')})"
+    #         ),
+    #     )
+    #     for r in sorted_ranks
+    # ]
+    # legend_elements += [
+    #     Patch(facecolor="none", edgecolor="black",
+    #           label="CPU step start (dashed) / end (solid)"),
+    #     Patch(facecolor="none", edgecolor="blue",
+    #           label="GPU backward end — bwd_latest_end (blue)"),
+    # ]
+    # ax.legend(
+    #     handles          = legend_elements,
+    #     loc              = "upper right",
+    #     title            = "GPU Ranks",
+    #     bbox_to_anchor   = (1.05, 1),
+    # )
 
     plt.tight_layout()
     plt.savefig(out_png, dpi=200, bbox_inches="tight")
