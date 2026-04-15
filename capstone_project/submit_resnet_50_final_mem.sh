@@ -1,14 +1,15 @@
 #!/bin/bash
 #SBATCH -q debug 
 #SBATCH -A grp_ashriva6
+#SBATCH -p htc
 #SBATCH --job-name=ddp-nsys         
 #SBATCH --output=ddp-%j.out         
 #SBATCH --error=ddp-%j.err     
-#SBATCH -N 2                             
-#SBATCH --ntasks-per-node=2        
-#SBATCH --gres=gpu:a30:2         
-#SBATCH --cpus-per-task=10          
-#SBATCH --time=10:00
+#SBATCH -N 1                       
+#SBATCH --ntasks-per-node=4        
+#SBATCH --gres=gpu:a100:4         
+#SBATCH --cpus-per-task=2          
+#SBATCH --time=13:00
 
 
 
@@ -28,19 +29,23 @@ export OMP_NUM_THREADS=1
 
 export NCCL_DEBUG=INFO
 export NCCL_DEBUG_SUBSYS=INIT,GRAPH,NET
-export NCCL_DEBUG_FILE=/home/hson17/capstone_project/nccl_log/nccl_rank%q{SLURM_PROCID}.log
+export NCCL_DEBUG_FILE=/home/dmahanpo/project/capstone_project/nccl_log/nccl_rank%q{SLURM_PROCID}.log
 
 BATCH_SIZE=128
 IMAGE_SIZE=32
 MAX_BATCHES=50
+BUCKET_CAP_MB=6
 
 OUT_NAME="profile_result_resnet_50_fin_bs${BATCH_SIZE}_img${IMAGE_SIZE}_mb${MAX_BATCHES}"
 
-OUT_DIR="/home/hson17/capstone_project/sqlite"
-LOG_DIR="/home/hson17/capstone_project/nccl_log"
+OUT_DIR="/home/dmahanpo/project/capstone_project/sqlite_${BUCKET_CAP_MB}mb_bucket"
+LOG_DIR="/home/dmahanpo/project/capstone_project/nccl_log"
 
 
 mkdir -p ${LOG_DIR}
+rm ${LOG_DIR}/*
+mkdir -p ${OUT_DIR}
+rm ${OUT_DIR}/*
 
 
 srun --export=ALL nsys profile \
@@ -49,7 +54,7 @@ srun --export=ALL nsys profile \
     --cpuctxsw=none \
     --force-overwrite=true \
    --output=${OUT_DIR}/${OUT_NAME}_rank%q{SLURM_PROCID} \
-    python main_ddp_resnet_50_final_mem.py --batch_size ${BATCH_SIZE} --image_size ${IMAGE_SIZE} --max_batches ${MAX_BATCHES}
+    python main_ddp_resnet_50_final_mem.py --batch_size ${BATCH_SIZE} --image_size ${IMAGE_SIZE} --max_batches ${MAX_BATCHES} --bucket_cap_mb ${BUCKET_CAP_MB}
 
 
 

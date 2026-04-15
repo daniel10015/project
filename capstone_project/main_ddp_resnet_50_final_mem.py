@@ -25,6 +25,7 @@ def parse_args():
     parser.add_argument("--max_batches", type=int, default=50,  help="Max batches per epoch")
     parser.add_argument("--profile_steps", type=int, nargs="+", default=[0, 5, 10], help="정밀 메모리 프로파일링할 스텝 번호")
     parser.add_argument("--snapshot_dir",  type=str, default="memory_snapshots")
+    parser.add_argument("--bucket_cap_mb", type=int, default=25)
 
     return parser.parse_args()
 
@@ -34,27 +35,6 @@ def parse_args():
 def get_profiled_resnet50(num_classes=10):
     # Load a standard torchvision ResNet-50
     model = models.resnet50(num_classes=num_classes)
-
-    # Patch the forward method to wrap selected modules with benchmark_ns
-    def forward_patched(self, x):
-        # Only profile during training (so evaluation stays clean and fast)
-            # Normal forward path (no NVTX / no timing)
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
-        x = self.maxpool(x)
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
-        x = self.avgpool(x)
-        x = torch.flatten(x, 1)
-        x = self.fc(x)
-
-        return x
-
-    # Bind patched forward to the model instance
-    model.forward = forward_patched.__get__(model, models.ResNet)
     
     return model
 # ==============================
@@ -70,7 +50,7 @@ def get_dataloaders(batch_size=1024, image_size=224):
     train_sampler = DistributedSampler(train_data, shuffle=True)
     train_loader = DataLoader(
         train_data, batch_size=batch_size, shuffle=False,
-        sampler=train_sampler, num_workers=4, pin_memory=True
+        sampler=train_sampler, num_workers=2, pin_memory=True
     )
     return train_loader, train_sampler
 
@@ -207,7 +187,7 @@ def main():
         image_size=args.image_size
     )
     model = get_profiled_resnet50().to(local_rank)
-    ddp_model = DDP(model, device_ids=[local_rank])
+    ddp_model = DDP(model, device_ids=[local_rank], bucket_cap_mb = args.bucket_cap_mb)
 
     
     ddp_model.register_comm_hook(state=None, hook=memlog.make_comm_hook())
